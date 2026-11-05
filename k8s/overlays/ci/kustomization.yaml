@@ -1,0 +1,15 @@
+# Used only by the GitHub Actions e2e job (kind cluster). Real indexer and real embeddings
+# (Ollama on the runner), stub LLM so no generation model is needed. The workflow adds one
+# more patch at run time: OLLAMA_URL, the docker gateway address of the runner.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - {name: rahbar-api, newName: rahbar-api, newTag: ci}
+  - {name: rahbar-indexer, newName: rahbar-indexer, newTag: ci}
+  - {name: rahbar-ui, newName: rahbar-ui, newTag: ci}
+patches:
+  - target: {kind: ConfigMap, name: rahbar-config}
+    patch: |-
+      - {op: replace, path: /data/LLM_PROVIDER, value: stub}

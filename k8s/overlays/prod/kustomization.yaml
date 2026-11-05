@@ -1,0 +1,11 @@
+# What the cd.yml workflow deploys. Images come from Docker Hub and are pinned by commit SHA:
+# cd.yml runs `kustomize edit set image rahbar-api=<user>/rahbar-api:<sha>` (never :latest).
+# The placeholders below only have to be valid for `kustomize build | kubeconform`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - {name: rahbar-api, newName: YOUR_DOCKERHUB_USER/rahbar-api, newTag: PLACEHOLDER_SHA}
+  - {name: rahbar-indexer, newName: YOUR_DOCKERHUB_USER/rahbar-indexer, newTag: PLACEHOLDER_SHA}
+  - {name: rahbar-ui, newName: YOUR_DOCKERHUB_USER/rahbar-ui, newTag: PLACEHOLDER_SHA}

@@ -1,0 +1,41 @@
+# One ConfigMap, read by the api and the indexer (envFrom), so EMBED_MODEL has exactly one
+# source of truth (section 4.4). Changing it does NOT restart pods by itself:
+#   kubectl rollout restart deployment/api -n rahbar
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rahbar-config
+  namespace: rahbar
+  labels: {app.kubernetes.io/part-of: rahbar}
+data:
+  # --- the pin ----------------------------------------------------------------------------
+  # The real model. The dev overlay temporarily replaces it with dummy-768 (week 1).
+  EMBED_MODEL: "nomic-embed-text"
+  # --- implementations --------------------------------------------------------------------
+  RETRIEVER: "chroma"            # stub | chroma
+  LLM_PROVIDER: "ollama-host"    # stub | ollama-host | ollama-incluster | hosted
+  LLM_MODEL: "llama3.2:3b"
+  OLLAMA_URL: "http://host.minikube.internal:11434"
+  # --- vector store and cache -------------------------------------------------------------
+  CHROMA_HOST: "chroma"
+  CHROMA_PORT: "8000"
+  CHROMA_COLLECTION: "rahbar"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  # readyz demands a non-empty, pin-matching collection (also while RETRIEVER=stub)
+  REQUIRE_INDEX: "true"
+  # --- retrieval and generation -----------------------------------------------------------
+  TOP_K: "5"
+  RELEVANCE_FLOOR: "0.35"        # below this similarity the system abstains (tune on the golden set)
+  # 0.2: facts and JSON belong at 0 to 0.3. Low enough for stable, citable output, not 0 so
+  # a retry after a validation failure can produce a different answer.
+  TEMPERATURE: "0.2"
+  # --- semantic cache ---------------------------------------------------------------------
+  CACHE_THRESHOLD: "0.92"        # chosen with data: see docs/PIPELINE.md and ADR 0002
+  CACHE_TTL_SECONDS: "86400"
+  CACHE_MAX_ENTRIES: "200"
+  # --- indexing ---------------------------------------------------------------------------
+  CHUNK_SIZE: "400"
+  CHUNK_OVERLAP: "50"
+  CORPUS_DIR: "/corpus"
+  LOG_LEVEL: "INFO"

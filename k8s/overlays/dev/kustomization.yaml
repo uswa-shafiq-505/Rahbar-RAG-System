@@ -1,0 +1,30 @@
+# Local minikube. Images are built with `make images` and loaded into minikube.
+# WEEK-1 / STUB MODE (the three patches below): the indexer writes the 3-chunk dummy index,
+# the api uses the stub retriever and stub LLM, and EMBED_MODEL=dummy-768 matches that index.
+# TO GO REAL: delete the whole `patches:` block, then `make apply`. The base ConfigMap already
+# holds the real settings (nomic-embed-text, chroma, ollama-host) and the Job runs the real
+# pipeline. Changing EMBED_MODEL back WITHOUT re-indexing is the section 4.4 demonstration.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - {name: rahbar-api, newName: rahbar-api, newTag: dev}
+  - {name: rahbar-indexer, newName: rahbar-indexer, newTag: dev}
+  - {name: rahbar-ui, newName: rahbar-ui, newTag: dev}
+patches:
+  - target: {kind: ConfigMap, name: rahbar-config}
+    patch: |-
+      - {op: replace, path: /data/EMBED_MODEL, value: dummy-768}
+      - {op: replace, path: /data/RETRIEVER, value: stub}
+      - {op: replace, path: /data/LLM_PROVIDER, value: stub}
+  - target: {kind: Job, name: indexer}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --dummy
+  - target: {kind: CronJob, name: reindex}
+    patch: |-
+      - op: add
+        path: /spec/jobTemplate/spec/template/spec/containers/0/args/-
+        value: --dummy

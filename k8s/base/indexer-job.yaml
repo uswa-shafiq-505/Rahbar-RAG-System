@@ -1,0 +1,52 @@
+# The indexer is a Job, not startup code in the api (docs/adr/0001-indexer-as-job.md).
+# It runs once, writes Chroma, and exits. restartPolicy OnFailure + backoffLimit retry it a
+# few times (Chroma may still be starting) before the Job is marked Failed.
+# A Job's pod template cannot be edited in place: `make apply` deletes and re-creates it.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: indexer
+  namespace: rahbar
+  labels: {app: indexer, app.kubernetes.io/part-of: rahbar}
+spec:
+  backoffLimit: 4
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels: {app: indexer, app.kubernetes.io/part-of: rahbar}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: indexer-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: indexer
+          image: rahbar-indexer
+          imagePullPolicy: IfNotPresent
+          args: ["python", "-m", "pipeline.run"]
+          envFrom:
+            - configMapRef: {name: rahbar-config}
+          # Embedding a 40-page PDF (and OCR) holds far more memory than answering a query.
+          # Exit code 137 = OOMKilled: raise the limit, guided by `kubectl top pods`.
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1536Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}     # OCR page images and pdf2image temp files
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 1Gi}
