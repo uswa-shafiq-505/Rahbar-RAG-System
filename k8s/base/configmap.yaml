@@ -25,7 +25,7 @@ data:
   # readyz demands a non-empty, pin-matching collection (also while RETRIEVER=stub)
   REQUIRE_INDEX: "true"
   # --- retrieval and generation -----------------------------------------------------------
-  TOP_K: "5"
+  TOP_K: "1"
   RELEVANCE_FLOOR: "0.35"        # below this similarity the system abstains (tune on the golden set)
   # 0.2: facts and JSON belong at 0 to 0.3. Low enough for stable, citable output, not 0 so
   # a retry after a validation failure can produce a different answer.
