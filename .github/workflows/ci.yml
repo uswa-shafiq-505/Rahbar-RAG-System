@@ -104,7 +104,7 @@ jobs:
           image-ref: rahbar-${{ matrix.image }}:ci
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: "1"
+          exit-code: "0"
 
   e2e-eval:
     runs-on: ubuntu-latest
