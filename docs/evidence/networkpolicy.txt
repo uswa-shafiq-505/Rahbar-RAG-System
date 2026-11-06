@@ -1,0 +1,7 @@
+--- ui -> chroma (should fail) ---
+wget: download timed out
+command terminated with exit code 1
+Exit code: 1
+--- ui -> api (should work) ---
+{"status":"alive"}--- api -> chroma (should work) ---
+b'{"nanosecond heartbeat":1793974449259303327}'

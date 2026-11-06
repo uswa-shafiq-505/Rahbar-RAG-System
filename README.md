@@ -1,8 +1,7 @@
 # RAHBAR: grounded question answering on Kubernetes
 
-[![ci](https://github.com/YOUR_GITHUB_USER/YOUR_REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB_USER/YOUR_REPO/actions/workflows/ci.yml)
-[![cd](https://github.com/YOUR_GITHUB_USER/YOUR_REPO/actions/workflows/cd.yml/badge.svg)](https://github.com/YOUR_GITHUB_USER/YOUR_REPO/actions/workflows/cd.yml)
-
+[![ci](https://github.com/uswa-shafiq-505/Rahbar-RAG-System/actions/workflows/ci.yml/badge.svg)](https://github.com/uswa-shafiq-505/Rahbar-RAG-System/actions/workflows/ci.yml)
+[![cd](https://github.com/uswa-shafiq-505/Rahbar-RAG-System/actions/workflows/cd.yml/badge.svg)](https://github.com/uswa-shafiq-505/Rahbar-RAG-System/actions/workflows/cd.yml)
 RAHBAR answers questions **only from a real document corpus** (FAST-NUCES public documents),
 cites its sources, and says so when the corpus does not contain the answer. It runs on
 Kubernetes: an indexer Job writes a ChromaDB vector store once, and a 3 to 8 replica API only
@@ -102,3 +101,4 @@ report, engineering notes, failure analysis, AI usage. See `docs/ARCHITECTURE.md
 
 ## Authors
 Member 1 (platform): ... · Member 2 (RAG): ...
+

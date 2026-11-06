@@ -41,6 +41,19 @@ spec:
       ports:
         - {protocol: TCP, port: 8080}
 ---
+# We must explicitly allow the UI to send traffic to the API
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ui-egress, namespace: rahbar}
+spec:
+  podSelector: {matchLabels: {app: ui}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app: api}}
+      ports:
+        - {protocol: TCP, port: 8000}
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata: {name: api-from-ingress-and-ui, namespace: rahbar}

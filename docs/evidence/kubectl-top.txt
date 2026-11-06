@@ -1,0 +1,7 @@
+POD                      NAME     CPU(cores)   MEMORY(bytes)   
+api-5b6b75747d-lhp24     api      5m           81Mi            
+api-5b6b75747d-pv4hf     api      5m           69Mi            
+api-5b6b75747d-w289q     api      5m           66Mi            
+chroma-0                 chroma   3m           52Mi            
+redis-687f67b6b7-4zhl8   redis    14m          10Mi            
+ui-b9cc6d7fd-cp2js       ui       1m           2Mi             

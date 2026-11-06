@@ -7,15 +7,16 @@ metadata:
   namespace: rahbar
   labels: {app.kubernetes.io/part-of: rahbar}
   annotations:
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"   # generation can take a while
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
 spec:
   ingressClassName: nginx
   rules:
     - host: rahbar.local
       http:
         paths:
+          # Use ImplementationSpecific and a trailing slash to avoid Nginx stripping the path
           - path: /api
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service: {name: api, port: {number: 8000}}
           - path: /

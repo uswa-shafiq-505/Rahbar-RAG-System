@@ -1,0 +1,10 @@
+--- Pod Status (one should be 0/1) ---
+NAME                   READY   STATUS    RESTARTS   AGE
+api-597986c5b7-sjbf5   0/1     Running   0          21s
+api-5b6b75747d-pnhfv   1/1     Running   0          97s
+api-5b6b75747d-pzl72   1/1     Running   0          105s
+api-5b6b75747d-sngss   1/1     Running   0          114s
+--- Mismatch Log ---
+{"ts": "2026-11-06T14:27:41Z", "level": "ERROR", "logger": "rahbar.index_state", "msg": "readiness changed", "request_id": "-", "ready": false, "checks": {"chroma": "embedding model mismatch: index was built with 'dummy-768' but this API has EMBED_MODEL='nomic-embed-text'. Re-run the indexer or fix the ConfigMap.", "redis": "ok"}}
+--- Readyz Error ---
+<http.client.HTTPResponse object at 0x704d72cecac0>
