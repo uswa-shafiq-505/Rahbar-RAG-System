@@ -46,8 +46,8 @@ jobs:
       # A Docker Hub ACCESS TOKEN from GitHub Secrets, never the account password.
       - uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.uswashafiq505 }}
+          password: ${{ secrets.uswashafiq505 }}
       - uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.image }}
