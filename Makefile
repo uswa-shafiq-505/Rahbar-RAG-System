@@ -13,7 +13,7 @@ INGRESS_IP ?= $(shell minikube ip 2>/dev/null)
 HOST ?= rahbar.local
 
 .DEFAULT_GOAL := help
-.PHONY: help install test lint dev cluster images apply secret index ask fetch eval eval-fixtures check
+.PHONY: help install test lint dev cluster images stage-corpus apply secret index ask fetch eval eval-fixtures check evidence
 
 help: ## list the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-14s %s\n", $$1, $$2}'
@@ -40,7 +40,12 @@ cluster: ## start minikube with Calico, then enable metrics-server and ingress
 	minikube addons enable metrics-server
 	minikube addons enable ingress
 
-images: ## build the three images and load them into minikube (needs yours: Dockerfiles)
+SRC ?= $(shell test -d corpus/raw && echo corpus/raw || echo eval/fixtures)
+stage-corpus: ## copy the documents to index into indexer/corpus-stage (SRC=corpus/raw or eval/fixtures)
+	find indexer/corpus-stage -mindepth 1 ! -name .gitkeep -delete
+	cp -r $(SRC)/. indexer/corpus-stage/
+
+images: stage-corpus ## stage the corpus, build the three images and load them into minikube
 	docker build -t rahbar-api:$(TAG) api
 	docker build -t rahbar-indexer:$(TAG) indexer
 	docker build -t rahbar-ui:$(TAG) ui
@@ -48,7 +53,8 @@ images: ## build the three images and load them into minikube (needs yours: Dock
 	minikube image load rahbar-indexer:$(TAG)
 	minikube image load rahbar-ui:$(TAG)
 
-apply: ## apply the dev overlay (needs yours: manifests)
+apply: ## apply the dev overlay (re-creates the indexer Job: a Job's spec cannot be edited)
+	kubectl delete job indexer -n $(NS) --ignore-not-found
 	kubectl apply -k k8s/overlays/dev
 
 secret: ## create the LLM key Secret from the LLM_API_KEY variable; never from a file
@@ -76,3 +82,9 @@ eval-fixtures: ## score the CI fixture golden set against a local `make dev`
 
 check: ## run the submission checker
 	$(PY) scripts/check_submission.py
+
+evidence: ## capture the kubectl outputs the marker asks for into docs/evidence/
+	kubectl get pods,svc,hpa,endpoints,networkpolicy -n $(NS) -o wide > docs/evidence/cluster-state.txt
+	kubectl top pods -n $(NS) --containers > docs/evidence/kubectl-top.txt
+	kubectl get endpoints api -n $(NS) > docs/evidence/endpoints.txt
+	kubectl get hpa -n $(NS) > docs/evidence/hpa.txt

@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: rahbar
+  labels: {app: api, app.kubernetes.io/part-of: rahbar}
+spec:
+  replicas: 3
+  # Rolling update that never removes a working pod before its replacement is READY.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
+  selector:
+    matchLabels: {app: api}
+  template:
+    metadata:
+      labels: {app: api, app.kubernetes.io/part-of: rahbar}
+    spec:
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      # Longer than the preStop sleep plus the slowest in-flight generation we accept.
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: rahbar-api                 # tag set by the overlay (dev: :dev, prod: :<sha>)
+          imagePullPolicy: IfNotPresent
+          ports:
+            - {name: http, containerPort: 8000}
+          envFrom:
+            - configMapRef: {name: rahbar-config}
+            - secretRef: {name: rahbar-secret, optional: true}   # LLM_API_KEY, hosted mode only
+          # Three probes, three jobs (section 4.3).
+          startupProbe:        # finished booting? liveness and readiness wait while this runs
+            httpGet: {path: /healthz, port: http}
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:       # still working? failure: the kubelet restarts the container
+            httpGet: {path: /healthz, port: http}   # touches NO dependency, on purpose
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:      # can it take traffic now? failure: removed from the Service
+            httpGet: {path: /readyz, port: http}    # Chroma, non-empty collection, pin, Redis
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
+          lifecycle:
+            # Gives the endpoint controller time to drop this pod from the Service BEFORE
+            # the process gets SIGTERM, so no request is sent to a pod that is shutting down.
+            preStop:
+              exec: {command: ["sleep", "10"]}
+          # Numbers justified by `kubectl top pods` (docs/evidence/kubectl-top.txt).
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}

@@ -1,0 +1,5 @@
+--- Reindex Job Logs ---
+{"ts": "2026-11-06T14:30:26Z", "logger": "rahbar.indexer", "msg": "indexer starting", "dummy": true, "embed_model": "dummy-768", "collection": "rahbar", "chroma": "chroma:8000", "pod": "manual-reindex-1-7vqqs"}
+{"ts": "2026-11-06T14:30:27Z", "logger": "rahbar.indexer", "msg": "indexer finished", "chunks": 3, "seconds": 1.7}
+--- API still answering during reindex ---
+    "answered_from_context": true,

@@ -15,8 +15,13 @@ def healthz() -> dict[str, str]:
 
 @router.get("/readyz")
 def readyz(request: Request, response: Response) -> dict[str, object]:
-    # STARTER-TODO(4.3, 4.4): return 503, naming the failed dependency, unless Chroma is
-    # reachable, the collection exists and is non-empty, Redis is reachable, and the
-    # collection's embedding model matches EMBED_MODEL. Until then this always says yes,
-    # which is exactly the lie section 4.2 warns about.
-    return {"status": "ready", "checks": {}}
+    """Can this pod take traffic? 200 only if Chroma is reachable, the collection is
+    non-empty and was built with OUR embedding model, and Redis is reachable. Otherwise
+    503 naming the dependency that failed. Not ready = withheld from the Service, not
+    restarted (that is liveness's job, and liveness must not look at dependencies)."""
+    ready, checks = request.app.state.index_state.readiness()
+    failed = {name: why for name, why in checks.items() if why != "ok"
+              and not why.startswith("skipped")}
+    if len(failed) > 0 or not ready:
+        response.status_code = 503
+    return {"status": "ready" if ready else "not ready", "checks": checks, "failed": failed}

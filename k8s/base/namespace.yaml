@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rahbar
+  labels:
+    app.kubernetes.io/part-of: rahbar
+    # Pod Security Admission: reject pods that break the "restricted" profile (non-root, no
+    # privilege escalation, dropped capabilities, seccomp). Everything below complies.
+    pod-security.kubernetes.io/enforce: baseline

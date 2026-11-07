@@ -43,6 +43,19 @@ class Settings:
 
     log_level: str = "INFO"
 
+    # --- Member 1 (platform) additions -------------------------------------------------
+    # Readiness: also demand a non-empty, pin-matching Chroma collection when the
+    # retriever is still the stub (week 1, dummy index). Always on when RETRIEVER=chroma.
+    require_index: bool = False
+    # Relevance floor (used by the generation code: abstain below this similarity).
+    relevance_floor: float = 0.35
+    # Semantic cache (section 3.3). Empty REDIS_HOST disables the cache (local dev, tests).
+    redis_host: str = ""
+    redis_port: int = 6379
+    cache_threshold: float = 0.92
+    cache_ttl_seconds: int = 86400
+    cache_max_entries: int = 200
+
 
 def get_settings() -> Settings:
     return Settings(
@@ -59,4 +72,11 @@ def get_settings() -> Settings:
         hosted_base_url=os.environ.get("HOSTED_BASE_URL", ""),
         llm_api_key=os.environ.get("LLM_API_KEY", ""),
         log_level=os.environ.get("LOG_LEVEL", "INFO"),
+        require_index=os.environ.get("REQUIRE_INDEX", "false").lower() == "true",
+        relevance_floor=_float("RELEVANCE_FLOOR", 0.35),
+        redis_host=os.environ.get("REDIS_HOST", ""),
+        redis_port=_int("REDIS_PORT", 6379),
+        cache_threshold=_float("CACHE_THRESHOLD", 0.92),
+        cache_ttl_seconds=_int("CACHE_TTL_SECONDS", 86400),
+        cache_max_entries=_int("CACHE_MAX_ENTRIES", 200),
     )

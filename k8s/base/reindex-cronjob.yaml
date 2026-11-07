@@ -1,0 +1,54 @@
+# Weekly re-index: same image and arguments as the Job. Manual re-index, no redeploy:
+#   kubectl create job --from=cronjob/reindex manual-reindex-1 -n rahbar
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: reindex
+  namespace: rahbar
+  labels: {app: indexer, app.kubernetes.io/part-of: rahbar}
+spec:
+  schedule: "0 3 * * 0"          # Sundays 03:00
+  concurrencyPolicy: Forbid       # never two writers on one collection
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 4
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels: {app: indexer, app.kubernetes.io/part-of: rahbar}
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: indexer-sa
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: indexer
+              image: rahbar-indexer
+              imagePullPolicy: IfNotPresent
+              args: ["python", "-m", "pipeline.run"]
+              envFrom:
+                - configMapRef: {name: rahbar-config}
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+                limits:
+                  cpu: "1"
+                  memory: 1536Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: tmp
+              emptyDir: {sizeLimit: 1Gi}

@@ -23,3 +23,7 @@ venv/
 # Local scratch
 *.log
 .DS_Store
+
+# Documents staged into the indexer build context (copied by `make stage-corpus`)
+indexer/corpus-stage/*
+!indexer/corpus-stage/.gitkeep

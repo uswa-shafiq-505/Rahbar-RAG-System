@@ -21,6 +21,9 @@ from .logjson import configure_logging, request_id_var
 from .providers.llm import get_provider
 from .retrieval import get_retriever
 from .routes import ask, health, metrics
+from .services.cache import SemanticCache
+from .services.index_state import IndexState
+from .services.instrument import TimedProvider, TimedRetriever
 
 log = logging.getLogger("rahbar.api")
 
@@ -30,11 +33,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     configure_logging(settings.log_level)
     app.state.settings = settings
-    app.state.retriever = get_retriever(settings)
-    app.state.provider = get_provider(settings)
-    # STARTER-TODO(4.4): compare the collection's embedding-model metadata with
-    # settings.embed_model here, and make /readyz fail on a mismatch.
+    app.state.retriever = TimedRetriever(get_retriever(settings))
+    app.state.provider = TimedProvider(get_provider(settings))
+    app.state.index_state = IndexState(settings)
+    app.state.cache = SemanticCache(settings, app.state.index_state)
+    # Embedding pin (section 4.4): look once at startup so a conflict is in the log
+    # immediately; /readyz re-checks on every probe and answers 503 until it is fixed.
     # This process only reads the index. The indexer Job writes it.
+    try:
+        app.state.index_state.readiness()
+    except Exception:  # noqa: BLE001 - never block startup on a dependency
+        log.warning("startup readiness check failed", exc_info=True)
     log.info(
         "api started",
         extra={"retriever": settings.retriever, "llm_provider": settings.llm_provider,
