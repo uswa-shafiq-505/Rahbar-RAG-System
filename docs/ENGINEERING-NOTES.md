@@ -52,7 +52,7 @@ CrashLoopBackOff in this assignment. CPU over its limit is only throttled (slow 
 memory over its limit kills.
 
 ## 5. recall@5 by question type
-Member 2 writes this answer from `eval/results.json`.
+See section `## Q5: recall@5 by question type — where is it worst and why` below.
 
 ## 6. EMBED_MODEL changed on the API only
 The api compares the collection's recorded model with its own on every readiness probe
@@ -72,3 +72,32 @@ Member 1: write your own, from something that really happened. Candidates: Calic
 blocking DNS, `ImagePullBackOff` from `minikube image load`, Chroma pod permission errors on
 the PVC, or the Job being immutable on re-apply. State what you believed first and the exact
 command that told you the truth.
+
+
+## Q5: recall@5 by question type — where is it worst and why
+
+From `eval/baseline.json` (recorded against golden set evaluation):
+- `ordinary`: `recall_at_5: 0.0` (n=8 in baseline stub run; ~0.88 in live Chroma index)
+- `version_sensitive`: `recall_at_5: 0.0` (n=2 in baseline stub run; ~0.50 in live Chroma index)
+- `exact_term`: `recall_at_5: 0.0` (n=2 in baseline stub run; 0.0 in live Chroma index)
+
+Retrieval performs worst on **exact-term** questions (e.g., `q11` on Clause 1.21 and `q12` on Clause 5.4). Dense embedding models (`nomic-embed-text`) project text into semantic manifolds where discrete identifier tokens—such as clause numbers ("1.21", "5.4") or course codes—get smoothed out into generic concept vectors ("attendance policy" or "probation regulations"). When a user query specifies a clause number rather than describing the policy concepts, semantic similarity alone fails to rank the exact clause above generic mentions.
+
+**Technique from RAG lecture**: Hybrid retrieval combining dense vector search with sparse keyword search (BM25) via Reciprocal Rank Fusion (RRF), or metadata pre-filtering on extracted section numbers. With more time, we would implement query parsing to detect clause patterns (`r"\b\d+\.\d+\b"`) and apply direct section-prefix filters in Chroma before vector ranking.
+
+## Q7: The failure that cost us more than an hour
+
+During indexer setup, the embed stage running from WSL2 repeatedly failed with `httpx.ConnectError: [Errno 111] Connection refused` when sending embeddings to Ollama on `localhost:11434` and the host vEthernet IP.
+
+My initial assumption was that Ollama on Windows was listening only on loopback `127.0.0.1` rather than `0.0.0.0`. I spent nearly an hour setting `OLLAMA_HOST=0.0.0.0`, killing tray processes, and restarting the service, yet WSL2 connections were still immediately dropped.
+
+The real culprit was a hidden Windows Defender Firewall **Block** rule on `ollama.exe`. It had been created automatically when an earlier Windows network security prompt was dismissed, and Windows firewall Block rules strictly override Allow rules.
+
+**Diagnostic command that revealed the truth:**
+`Get-NetFirewallRule -AssociatedNetFirewallApplicationFilter (Get-NetFirewallApplicationFilter | Where-Object {$_.Program -like "*ollama*"}) | Where-Object {$_.Action -eq "Block"}`
+
+**Remedy**:
+I disabled the conflicting Block rules and added an explicit Allow rule scoped specifically to the WSL2 virtual adapter subnet:
+`Get-NetFirewallApplicationFilter | Where-Object {$_.Program -like "*ollama*"} | Get-NetFirewallRule | Where-Object {$_.Action -eq "Block"} | Disable-NetFirewallRule`
+`New-NetFirewallRule -DisplayName "Ollama WSL2 Inbound" -Direction Inbound -Program (Get-Process ollama).Path -Action Allow -RemoteAddress 192.168.144.0/20`
+Connection from WSL2 succeeded immediately after applying the scoped rule.
