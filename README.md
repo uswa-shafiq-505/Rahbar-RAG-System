@@ -102,3 +102,4 @@ report, engineering notes, failure analysis, AI usage. See `docs/ARCHITECTURE.md
 ## Authors
 Member 1 (platform): ... · Member 2 (RAG): ...
 
+ 
