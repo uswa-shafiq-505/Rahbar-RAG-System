@@ -12,7 +12,7 @@ from ..providers.llm import get_provider
 from ..providers.llm.base import LLMProvider
 from ..retrieval import get_retriever
 from ..retrieval.base import Retriever
-from ..schemas import AskResponse, Citation, Passage, RetrievedRef
+from ..schemas import Answer, AskResponse, Citation, Passage, RetrievedRef
 
 log = logging.getLogger("rahbar.answer")
 
@@ -152,7 +152,11 @@ def answer_question(
     # 4. Build prompt & 5. Generate
     prompt_passages = filtered_passages[:3]
     prompt = _build_prompt(question, prompt_passages)
-    model_answer = provider.generate(prompt, passages=prompt_passages)
+    try:
+        model_answer: Answer = provider.generate(prompt, passages=filtered_passages)
+    except Exception as first_err:
+        log.warning("provider.generate failed, retrying once: %s", first_err)
+        model_answer = provider.generate(prompt, passages=filtered_passages)
 
     if not model_answer.answered_from_context and model_answer.answer.startswith("The model could not"):
         log.info("abstained=True cached_write=False")
