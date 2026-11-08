@@ -81,7 +81,8 @@ class ChromaRetriever(Retriever):
             meta = metas[i] if i < len(metas) and metas[i] else {}
             doc_text = docs[i] if i < len(docs) and docs[i] else ""
             dist = float(dists[i]) if i < len(dists) and dists[i] is not None else 0.0
-            score = max(0.0, min(1.0, 1.0 - dist))
+            log.info("chroma hit %d: dist=%.3f", i, dist)
+            score = max(0.0, min(1.0, 1.0 - (dist / 500.0)))
             page_raw = meta.get("page")
             page_val: int | None = int(page_raw) if page_raw is not None else None
 

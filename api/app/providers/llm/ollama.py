@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -38,6 +39,107 @@ def _build_prompt(question: str, passages: list[Passage]) -> str:
     )
 
 
+def _coerce_answer_dict(raw: dict[str, Any], retrieved_passages: list[Passage] | None = None) -> dict[str, Any]:
+    passages = retrieved_passages or []
+    coerced: dict[str, Any] = {}
+
+    # 1. Missing reasoning -> set to ""
+    coerced["reasoning"] = str(raw.get("reasoning") or "")
+
+    # 2. Missing answer -> set to "" (then treat as abstention)
+    raw_answer = raw.get("answer")
+    answer_str = str(raw_answer) if raw_answer is not None else ""
+    coerced["answer"] = answer_str
+
+    # 3. citations coercion
+    raw_citations = raw.get("citations")
+    coerced_citations: list[dict[str, Any]] = []
+
+    if isinstance(raw_citations, list):
+        for c in raw_citations:
+            if isinstance(c, int):
+                # 1-indexed rank
+                rank = c
+                if 1 <= rank <= len(passages):
+                    p = passages[rank - 1]
+                    coerced_citations.append({
+                        "source": p.source,
+                        "section": p.section,
+                        "page": p.page,
+                    })
+            elif isinstance(c, str):
+                parts = [part.strip() for part in c.split("|")]
+                src = parts[0] if len(parts) > 0 else ""
+                sec = parts[1] if len(parts) > 1 else ""
+                page_val: int | None = None
+                if len(parts) > 2:
+                    m = re.search(r"\d+", parts[2])
+                    if m:
+                        page_val = int(m.group(0))
+                coerced_citations.append({
+                    "source": src,
+                    "section": sec,
+                    "page": page_val,
+                })
+            elif isinstance(c, dict):
+                src = str(c.get("source") or "")
+                sec = str(c.get("section") or "")
+                raw_p = c.get("page")
+                page_val = None
+                if raw_p is not None:
+                    try:
+                        page_val = int(raw_p)
+                    except (ValueError, TypeError):
+                        page_val = None
+                coerced_citations.append({
+                    "source": src,
+                    "section": sec,
+                    "page": page_val,
+                })
+
+    coerced["citations"] = coerced_citations
+
+    # 4. confidence is float/number
+    raw_conf = raw.get("confidence")
+    if isinstance(raw_conf, (int, float)):
+        if raw_conf >= 0.75:
+            coerced["confidence"] = "high"
+        elif raw_conf >= 0.4:
+            coerced["confidence"] = "medium"
+        else:
+            coerced["confidence"] = "low"
+    elif isinstance(raw_conf, str):
+        c_str = raw_conf.strip().lower()
+        if c_str in ("high", "medium", "low"):
+            coerced["confidence"] = c_str
+        else:
+            try:
+                num = float(c_str)
+                if num >= 0.75:
+                    coerced["confidence"] = "high"
+                elif num >= 0.4:
+                    coerced["confidence"] = "medium"
+                else:
+                    coerced["confidence"] = "low"
+            except ValueError:
+                coerced["confidence"] = "low"
+    else:
+        coerced["confidence"] = "low"
+
+    # 5. answered_from_context
+    raw_afc = raw.get("answered_from_context")
+    if "could not find" in answer_str.lower():
+        coerced["answered_from_context"] = False
+    elif not answer_str.strip():
+        coerced["answered_from_context"] = False
+    elif raw_afc is not None:
+        coerced["answered_from_context"] = bool(raw_afc)
+    else:
+        coerced["answered_from_context"] = True
+
+    return coerced
+
+
 class OllamaProvider(LLMProvider):
     name: str = "ollama"
 
@@ -48,18 +150,40 @@ class OllamaProvider(LLMProvider):
         self,
         prompt: str,
         temperature: float | list[Passage] | None = None,
+        passages: list[Passage] | None = None,
     ) -> Answer:
         """Call Ollama /api/generate with JSON format, validate Answer, and retry once on failure."""
         try:
+            retrieved_passages: list[Passage] = []
             if isinstance(temperature, list):
                 temp = float(self.settings.temperature)
+                retrieved_passages = temperature
                 prompt_text = _build_prompt(prompt, temperature)
             elif temperature is not None:
                 temp = float(temperature)
                 prompt_text = prompt
+                if passages:
+                    retrieved_passages = passages
             else:
                 temp = float(self.settings.temperature)
                 prompt_text = prompt
+                if passages:
+                    retrieved_passages = passages
+
+            if not retrieved_passages and prompt_text:
+                for m in re.finditer(r"\[(\d+)\]\s*source=([^|\n]+?)\s*\|\s*section=([^|\n]+?)\s*\|\s*page=([^\n]+)", prompt_text):
+                    pg_str = m.group(4).strip()
+                    pg_num = int(pg_str) if pg_str.isdigit() else None
+                    retrieved_passages.append(
+                        Passage(
+                            chunk_id=f"p{m.group(1)}",
+                            text="",
+                            source=m.group(2).strip(),
+                            section=m.group(3).strip(),
+                            page=pg_num,
+                            score=1.0,
+                        )
+                    )
 
             url = f"{self.settings.ollama_url.rstrip('/')}/api/generate"
             payload: dict[str, Any] = {
@@ -97,7 +221,10 @@ class OllamaProvider(LLMProvider):
                         return _canned_answer("Model failed to produce valid JSON twice.")
 
                     parsed = json.loads(raw_response)
-                    return Answer.model_validate(parsed)
+                    if isinstance(parsed, dict):
+                        coerced = _coerce_answer_dict(parsed, retrieved_passages)
+                        return Answer.model_validate(coerced)
+                    raise ValueError("Ollama response JSON is not an object")
 
                 except (httpx.TimeoutException, httpx.RequestError) as exc:
                     log.warning("ollama request error (attempt %d/2): %s", attempt, exc)

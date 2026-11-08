@@ -100,6 +100,7 @@ report, engineering notes, failure analysis, AI usage. See `docs/ARCHITECTURE.md
 `make test`, `make lint`, `make check` (submission lint).
 
 ## Authors
-Member 1 (platform): ... · Member 2 (RAG): ...
+Uswa Shafiq (Platform)
+Ermish (RAG)
 
  

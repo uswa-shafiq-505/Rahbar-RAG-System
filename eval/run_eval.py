@@ -198,7 +198,7 @@ def main() -> int:
 
     rows: list[dict] = []
     try:
-        with httpx.Client(timeout=30.0, headers={"Host": args.host} if args.host else {}) as client:
+        with httpx.Client(timeout=120.0, headers={"Host": args.host} if args.host else {}) as client:
             for q in questions:
                 resp, elapsed = _ask_one(client, args.api, q)
                 rows.append({"q": q, "response": resp, "seconds": elapsed})
