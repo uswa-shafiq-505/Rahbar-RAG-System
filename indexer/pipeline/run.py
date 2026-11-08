@@ -79,8 +79,8 @@ def run_pipeline(settings: IndexerSettings) -> int:
         pieces = chunk(doc, settings.chunk_size, settings.chunk_overlap)
         log("chunked", source=path.name, chunks=len(pieces))
         all_chunks.extend(pieces)
-    vectors = embed([c.text for c in all_chunks], settings)
-    return store(all_chunks, vectors, settings)
+    vectors = embed([c.text for c in all_chunks], settings)  # type: ignore[arg-type, misc]
+    return store(all_chunks, vectors, settings)  # type: ignore[arg-type]
 
 
 def main() -> int:

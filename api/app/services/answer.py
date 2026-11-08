@@ -12,7 +12,7 @@ from ..providers.llm import get_provider
 from ..providers.llm.base import LLMProvider
 from ..retrieval import get_retriever
 from ..retrieval.base import Retriever
-from ..schemas import Answer, AskResponse, Citation, Passage, RetrievedRef
+from ..schemas import AskResponse, Citation, Passage, RetrievedRef
 
 log = logging.getLogger("rahbar.answer")
 

@@ -48,8 +48,8 @@ def store(
         settings = chroma_host
         host = settings.chroma_host
         port = settings.chroma_port
-        col_name = settings.collection
-        model = settings.embed_model
+        col_name = settings.collection  # type: ignore[attr-defined]
+        model = settings.embed_model  # type: ignore[attr-defined]
         dim = len(vectors[0]) if vectors else 768
         version = getattr(settings, "index_version", "v1")
     else:
@@ -110,7 +110,7 @@ def store(
             collection.upsert(
                 ids=[c.id for c in b_chunks],
                 documents=[c.text for c in b_chunks],
-                embeddings=b_vectors,
+                embeddings=b_vectors,  # type: ignore[arg-type]
                 metadatas=[c.metadata() for c in b_chunks],
             )
             done = end
