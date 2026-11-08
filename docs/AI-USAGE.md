@@ -43,3 +43,5 @@ None of the acceptance decisions were made by AI. Antigravity does not run the e
 ## Sum check
 
 Every file that Antigravity touched has a corresponding note above. The platform side (K8s, CI, Docker, Terraform equivalent — none here) has no AI provenance because it was entirely teammate-authored. Where AI helped, the specific contribution is named; where we overrode its output, the failure and the fix are named. This is the honest record.
+
+> **CI e2e-eval disclosure:** The `e2e-eval` CI job runs the indexer with `--dummy` and the stub retriever/LLM provider (no Ollama, no real embeddings) to validate Kubernetes orchestration only; the authoritative evaluation numbers are from the local run in `eval/results.json`.

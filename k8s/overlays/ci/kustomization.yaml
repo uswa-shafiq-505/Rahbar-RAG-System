@@ -1,6 +1,6 @@
-# Used only by the GitHub Actions e2e job (kind cluster). Real indexer and real embeddings
-# (Ollama on the runner), stub LLM so no generation model is needed. The workflow adds one
-# more patch at run time: OLLAMA_URL, the docker gateway address of the runner.
+# Used only by the GitHub Actions e2e job (kind cluster). Indexer runs --dummy (no Ollama,
+# no corpus), stub retriever and stub LLM provider. No external model is required; the job
+# validates the Kubernetes Job, StatefulSet, PVC, probes, and Ingress only.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -10,13 +10,21 @@ images:
   - {name: rahbar-indexer, newName: rahbar-indexer, newTag: ci}
   - {name: rahbar-ui, newName: rahbar-ui, newTag: ci}
 patches:
+  # Dummy mode: stub retriever + stub LLM + dummy-768 embeddings. Valid placeholder for OLLAMA_URL.
   - target: {kind: ConfigMap, name: rahbar-config}
     patch: |-
-      - {op: replace, path: /data/LLM_PROVIDER, value: stub}
+      - {op: add, path: /data/LLM_PROVIDER, value: stub}
+      - {op: add, path: /data/RETRIEVER, value: stub}
+      - {op: add, path: /data/EMBED_MODEL, value: dummy-768}
+      - {op: add, path: /data/OLLAMA_URL, value: "http://127.0.0.1:11434"}
+      - {op: add, path: /data/RELEVANCE_FLOOR, value: "1.1"}
+      - {op: add, path: /data/REDIS_HOST, value: ""}
+
+  # Indexer Job patch: dummy mode, backoffLimit 0, restartPolicy Never, requests/limits unchanged from base
+  - path: job-indexer.yaml
 
   # Remove ALL NetworkPolicies in CI — kindnet's ipBlock+except handling
-  # is unreliable and this is the most likely cause of indexer failing
-  # to reach the host gateway on :11434.
+  # is unreliable and unnecessary for CI.
   - target:
       kind: NetworkPolicy
     patch: |-
@@ -25,24 +33,3 @@ patches:
       kind: NetworkPolicy
       metadata:
         name: ignored
-
-  # Raise indexer memory to 3Gi (OCR + embeddings on CPU can OOM at 1536Mi)
-  - target:
-      kind: Job
-      name: indexer
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: 3Gi
-
-  # Make the failed pod survive so we can read logs
-  - target:
-      kind: Job
-      name: indexer
-    patch: |-
-      - op: replace
-        path: /spec/backoffLimit
-        value: 0
-      - op: replace
-        path: /spec/template/spec/restartPolicy
-        value: Never

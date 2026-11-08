@@ -1,0 +1,12 @@
+{
+  "retrieval": {
+    "recall_at_3": 0.0,
+    "recall_at_5": 0.0
+  },
+  "generation": {
+    "citation_validity_pct": 1.0,
+    "abstention_correctness_pct": 1.0,
+    "must_abstain_violations": 0
+  }
+}
+

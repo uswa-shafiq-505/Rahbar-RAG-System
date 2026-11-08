@@ -99,6 +99,8 @@ report, engineering notes, failure analysis, AI usage. See `docs/ARCHITECTURE.md
 ## Tests and the checker
 `make test`, `make lint`, `make check` (submission lint).
 
+> **CI note:** The `e2e-eval` job runs the indexer with `--dummy` and the stub retriever/LLM provider to validate the Kubernetes Job, StatefulSet, PVC, probes, and Ingress without requiring Ollama; real-embedding evaluation numbers come from the local run recorded in `eval/results.json`.
+
 ## Authors
 Uswa Shafiq (Platform)
 Ermish (RAG)
