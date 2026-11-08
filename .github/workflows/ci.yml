@@ -113,11 +113,19 @@ jobs:
       - run: pip install pyyaml httpx
 
       # Real embeddings on the runner (the pinned nomic-embed-text); the LLM stays a stub.
-      - name: Start Ollama and pull the embedding model
+      - name: Start Ollama on 0.0.0.0 and pull the embedding model
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
+          # Kill the auto-started systemd service that binds to 127.0.0.1
+          sudo systemctl stop ollama || true
+          sudo systemctl disable ollama || true
+          sudo pkill -f 'ollama serve' || true
+          sleep 3
+          # Start our own instance on 0.0.0.0 so the kind cluster can reach it via the docker gateway
           OLLAMA_HOST=0.0.0.0 nohup ollama serve > /tmp/ollama.log 2>&1 &
           for i in $(seq 1 30); do curl -sf localhost:11434/api/version && break; sleep 2; done
+          # Verify it is bound to 0.0.0.0:11434, not 127.0.0.1
+          (ss -tlnp 2>/dev/null || netstat -tlnp) | grep 11434 || true
           ollama pull nomic-embed-text
 
       - name: Create a kind cluster with an Ingress port mapping
