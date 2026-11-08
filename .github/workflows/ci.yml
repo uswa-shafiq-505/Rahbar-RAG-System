@@ -45,8 +45,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - # kubectl kustomize is the same engine as `kustomize build`.
-        # Run kubeconform through Docker to avoid release binary download issues.
+      # kubectl kustomize is the same engine as `kustomize build`.
+      # Run kubeconform through Docker to avoid release binary download issues.
       - name: Validate every overlay
       run: |
         for overlay in dev prod ci; do
