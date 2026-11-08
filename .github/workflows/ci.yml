@@ -48,16 +48,16 @@ jobs:
       # kubectl kustomize is the same engine as `kustomize build`.
       # Run kubeconform through Docker to avoid release binary download issues.
       - name: Validate every overlay
-      run: |
-        for overlay in dev prod ci; do
-          echo "== $overlay"
-          kubectl kustomize k8s/overlays/$overlay | docker run --rm -i ghcr.io/yannh/kubeconform:v0.8.0 -strict -summary
-        done
-
+        run: |
+          for overlay in dev prod ci; do
+            echo "== $overlay"
+            kubectl kustomize k8s/overlays/$overlay | docker run --rm -i ghcr.io/yannh/kubeconform:v0.8.0 -strict -summary
+          done
+  
   build:
     runs-on: ubuntu-latest
     needs: [lint, test]
-    strategy:
+    strategy:     
       matrix:
         image: [api, indexer, ui]
     steps:
