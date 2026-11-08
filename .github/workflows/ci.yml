@@ -164,12 +164,19 @@ jobs:
 
       - name: Apply the manifests
         run: |
-          # Embeddings come from Ollama on the runner: reach it through the docker gateway.
           GATEWAY=$(docker network inspect kind -f '{{(index .IPAM.Config 0).Gateway}}')
+          echo "Gateway: $GATEWAY"
           cd k8s/overlays/ci
           kustomize edit add patch --kind ConfigMap --name rahbar-config \
             --patch "[{\"op\":\"replace\",\"path\":\"/data/OLLAMA_URL\",\"value\":\"http://${GATEWAY}:11434\"}]"
+          # Keep failed pods so logs survive; rule out OOM
+          kustomize edit add patch --kind Job --name indexer \
+            --patch '[{"op":"add","path":"/spec/backoffLimit","value":2},{"op":"add","path":"/spec/template/spec/restartPolicy","value":"Never"},{"op":"replace","path":"/spec/template/spec/containers/0/resources/limits/memory","value":"3Gi"}]'
           kubectl apply -k .
+          # Diagnostic hedge: strip NetworkPolicies in CI
+          kubectl delete networkpolicy --all -n rahbar || true
+          # Stream indexer logs while the pod is alive
+          nohup bash -c 'for i in $(seq 1 150); do kubectl logs -n rahbar -l job-name=indexer --all-containers --tail=-1 -f --prefix >> /tmp/indexer-stream.log 2>&1; sleep 3; done' >/dev/null 2>&1 &
 
       - name: Probe Ollama from inside cluster
         run: |
@@ -185,17 +192,22 @@ jobs:
         run: |
           kubectl rollout status statefulset/chroma -n rahbar --timeout=180s
           kubectl rollout status deployment/redis -n rahbar --timeout=120s
-          # Do not fail immediately: let debug capture what happened
-          kubectl wait --for=condition=complete job/indexer -n rahbar --timeout=600s || true
-          kubectl rollout status deployment/api -n rahbar --timeout=240s || true
-          kubectl rollout status deployment/ui -n rahbar --timeout=120s || true
-          # Now check if Job actually succeeded
-          SUCCEEDED=$(kubectl get job/indexer -n rahbar -o jsonpath='{.status.succeeded}' 2>/dev/null || echo "0")
-          echo "Job succeeded count: $SUCCEEDED"
-          if [ "$SUCCEEDED" != "1" ]; then
-            echo "FAIL: indexer Job did not complete"
+          RESULT=timeout
+          for i in $(seq 1 90); do
+            S=$(kubectl get job/indexer -n rahbar -o jsonpath='{.status.succeeded}' 2>/dev/null)
+            F=$(kubectl get job/indexer -n rahbar -o jsonpath='{.status.failed}' 2>/dev/null)
+            echo "t=$((i*5))s succeeded=${S:-0} failed=${F:-0}"
+            if [ "${S:-0}" = "1" ]; then RESULT=ok; break; fi
+            if [ "${F:-0}" -ge 3 ]; then RESULT=failed; break; fi
+            sleep 5
+          done
+          echo "Indexer result: $RESULT"
+          if [ "$RESULT" != "ok" ]; then
+            echo "=== STREAMED INDEXER LOGS ==="; cat /tmp/indexer-stream.log || true
             exit 1
           fi
+          kubectl rollout status deployment/api -n rahbar --timeout=240s
+          kubectl rollout status deployment/ui -n rahbar --timeout=120s
 
       - name: Run the eval gate against the live stack, through the Ingress
         run: |
@@ -207,24 +219,15 @@ jobs:
       - name: Indexer debug (always runs)
         if: always()
         run: |
-          echo "=== PODS ==="
-          kubectl get pods -n rahbar -o wide || true
-          echo "=== JOB DESCRIBE ==="
-          kubectl describe job/indexer -n rahbar || true
-          echo "=== POD DESCRIBE ==="
-          kubectl describe pod -n rahbar -l job-name=indexer || true
-          echo "=== INDEXER LOGS (previous) ==="
-          kubectl logs -n rahbar -l job-name=indexer --tail=400 --all-containers --previous 2>&1 || true
-          echo "=== INDEXER LOGS (current) ==="
-          kubectl logs -n rahbar -l job-name=indexer --tail=400 --all-containers 2>&1 || true
-          echo "=== EVENTS ==="
-          kubectl get events -n rahbar --sort-by=.lastTimestamp || true
-          echo "=== NETWORKPOLICIES ==="
-          kubectl get networkpolicy -n rahbar -o wide || true
-          echo "=== OLLAMA BIND ==="
-          sudo ss -tlnp | grep 11434 || true
-          echo "=== OLLAMA JOURNAL ==="
-          sudo journalctl -u ollama --no-pager -n 60 || true
+          echo "=== STREAMED INDEXER LOGS ==="; cat /tmp/indexer-stream.log || true
+          echo "=== POD EXIT REASONS ==="
+          kubectl get pods -n rahbar -l job-name=indexer -o jsonpath='{range .items[*]}{.metadata.name}{" reason="}{.status.containerStatuses[0].state.terminated.reason}{" exit="}{.status.containerStatuses[0].state.terminated.exitCode}{"\n"}{end}' || true
+          echo "=== PODS ==="; kubectl get pods -n rahbar -o wide || true
+          echo "=== POD DESCRIBE ==="; kubectl describe pod -n rahbar -l job-name=indexer || true
+          echo "=== LOGS PER POD ==="
+          for p in $(kubectl get pods -n rahbar -l job-name=indexer -o name); do echo "--- $p"; kubectl logs -n rahbar $p --all-containers || true; done
+          echo "=== EVENTS ==="; kubectl get events -n rahbar --sort-by=.lastTimestamp || true
+          echo "=== OLLAMA ==="; sudo ss -tlnp | grep 11434 || true; sudo journalctl -u ollama --no-pager -n 40 || true
 
       - uses: actions/upload-artifact@v4
         if: always()
