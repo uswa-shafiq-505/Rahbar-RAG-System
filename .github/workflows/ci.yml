@@ -116,15 +116,15 @@ jobs:
       - name: Start Ollama on 0.0.0.0 and pull the embedding model
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
-          # Kill EVERY ollama process before rebinding
-          sudo systemctl stop ollama || true
-          sudo systemctl disable ollama || true
-          sudo pkill -9 -f ollama || true
-          sudo killall -9 ollama 2>/dev/null || true
-          sleep 5
-          sudo lsof -i :11434 || echo "port 11434 free"
-          # Start our own instance bound to all interfaces
-          OLLAMA_HOST=0.0.0.0 nohup ollama serve > /tmp/ollama.log 2>&1 &
+          # Use systemd override to bind 0.0.0.0 — no process kills, no port races
+          sudo mkdir -p /etc/systemd/system/ollama.service.d
+          sudo tee /etc/systemd/system/ollama.service.d/override.conf >/dev/null <<'EOF'
+          [Service]
+          Environment="OLLAMA_HOST=0.0.0.0"
+          EOF
+          sudo systemctl daemon-reload
+          sudo systemctl restart ollama
+          # Wait until reachable
           for i in $(seq 1 30); do
             if curl -sf http://localhost:11434/api/version >/dev/null 2>&1; then
               echo "Ollama up (attempt $i)"
@@ -132,7 +132,8 @@ jobs:
             fi
             sleep 2
           done
-          sudo ss -tlnp | grep 11434 || true
+          # Verify bound to 0.0.0.0:11434 (not 127.0.0.1)
+          sudo ss -tlnp | grep 11434
           ollama pull nomic-embed-text
 
       - name: Create a kind cluster with an Ingress port mapping
