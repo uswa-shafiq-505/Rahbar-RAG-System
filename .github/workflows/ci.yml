@@ -45,18 +45,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install kubeconform
-        run: |
-          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
-            | tar xz kubeconform
-          sudo mv kubeconform /usr/local/bin/
-      # kubectl kustomize is the same engine as `kustomize build`.
+      - # kubectl kustomize is the same engine as `kustomize build`.
+        # Run kubeconform through Docker to avoid release binary download issues.
       - name: Validate every overlay
-        run: |
-          for overlay in dev prod ci; do
-            echo "== $overlay"
-            kubectl kustomize k8s/overlays/$overlay | kubeconform -strict -summary
-          done
+      run: |
+        for overlay in dev prod ci; do
+          echo "== $overlay"
+          kubectl kustomize k8s/overlays/$overlay | docker run --rm -i ghcr.io/yannh/kubeconform:v0.8.0 -strict -summary
+        done
 
   build:
     runs-on: ubuntu-latest
