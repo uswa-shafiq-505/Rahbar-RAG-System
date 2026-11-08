@@ -139,8 +139,20 @@ jobs:
 
       - name: Apply the manifests
         run: |
-          cd k8s/overlays/ci
-          kubectl apply -k .
+          kubectl kustomize k8s/overlays/ci > /tmp/ci.yaml
+          echo "=== Rendered ConfigMap ==="
+          sed -n '/kind: ConfigMap/,/---/p' /tmp/ci.yaml
+          echo "=== Rendered indexer Job ==="
+          sed -n '/kind: Job/,/---/p' /tmp/ci.yaml
+          if ! grep -q -- '--dummy' /tmp/ci.yaml || ! grep -q 'LLM_PROVIDER: stub' /tmp/ci.yaml; then
+            echo "Manifest verification failed: missing --dummy or LLM_PROVIDER: stub"
+            cat /tmp/ci.yaml
+            exit 1
+          fi
+          kubectl apply -f /tmp/ci.yaml
+          kubectl get cm rahbar-config -n rahbar -o yaml
+          kubectl get job indexer -n rahbar -o jsonpath='{.spec.template.spec.containers[0].args}{"\n"}{.spec.template.spec.containers[0].env}'
+          echo ""
           kubectl delete networkpolicy --all -n rahbar || true
           nohup bash -c 'for i in $(seq 1 150); do kubectl logs -n rahbar -l job-name=indexer --all-containers --tail=-1 -f --prefix >> /tmp/indexer-stream.log 2>&1; sleep 3; done' >/dev/null 2>&1 &
 
