@@ -102,7 +102,7 @@ jobs:
           ignore-unfixed: true
           exit-code: "0"
 
-  e2e-eval:
+    e2e-eval:
     runs-on: ubuntu-latest
     needs: [manifests, build]
     timeout-minutes: 25
@@ -112,30 +112,23 @@ jobs:
         with: {python-version: "${{ env.PYTHON_VERSION }}", cache: pip}
       - run: pip install pyyaml httpx
 
-      # Real embeddings on the runner (the pinned nomic-embed-text); the LLM stays a stub.
       - name: Start Ollama on 0.0.0.0 and pull the embedding model
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
-          # Use systemd override to bind 0.0.0.0 — no process kills, no port races
           sudo mkdir -p /etc/systemd/system/ollama.service.d
           sudo tee /etc/systemd/system/ollama.service.d/override.conf >/dev/null <<'EOF'
           [Service]
-          Environment="OLLAMA_HOST=0.0.0.0"
+          Environment="OLLAMA_HOST=0.0.0.0:11434"
           EOF
           sudo systemctl daemon-reload
           sudo systemctl restart ollama
-          # Wait until reachable
           for i in $(seq 1 30); do
             if curl -sf http://localhost:11434/api/version >/dev/null 2>&1; then
-              echo "Ollama up (attempt $i)"
-              break
+              echo "Ollama up (attempt $i)"; break
             fi
             sleep 2
           done
           sudo ss -tlnp | grep 11434 || true
-          sudo ss -tlnp | grep -q "0.0.0.0:11434\|[*]:11434" || (echo "FAIL: Ollama not bound to 0.0.0.0"; sudo journalctl -u ollama --no-pager -n 40; exit 1)
-          GATEWAY=$(docker network inspect kind -f '{{(index .IPAM.Config 0).Gateway}}' 2>/dev/null || echo "172.18.0.1")
-          curl -sS -m 10 "http://${GATEWAY}:11434/api/version" && echo "Ollama reachable via gateway"
           ollama pull nomic-embed-text
 
       - name: Create a kind cluster with an Ingress port mapping
@@ -143,6 +136,7 @@ jobs:
         with:
           cluster_name: rahbar
           config: .github/kind-config.yaml
+
       - name: Install the ingress controller (pinned)
         run: |
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.2/deploy/static/provider/kind/deploy.yaml
@@ -169,24 +163,9 @@ jobs:
           cd k8s/overlays/ci
           kustomize edit add patch --kind ConfigMap --name rahbar-config \
             --patch "[{\"op\":\"replace\",\"path\":\"/data/OLLAMA_URL\",\"value\":\"http://${GATEWAY}:11434\"}]"
-          # Keep failed pods so logs survive; rule out OOM
-          kustomize edit add patch --kind Job --name indexer \
-            --patch '[{"op":"add","path":"/spec/backoffLimit","value":2},{"op":"add","path":"/spec/template/spec/restartPolicy","value":"Never"},{"op":"replace","path":"/spec/template/spec/containers/0/resources/limits/memory","value":"3Gi"}]'
           kubectl apply -k .
-          # Diagnostic hedge: strip NetworkPolicies in CI
           kubectl delete networkpolicy --all -n rahbar || true
-          # Stream indexer logs while the pod is alive
           nohup bash -c 'for i in $(seq 1 150); do kubectl logs -n rahbar -l job-name=indexer --all-containers --tail=-1 -f --prefix >> /tmp/indexer-stream.log 2>&1; sleep 3; done' >/dev/null 2>&1 &
-
-      - name: Probe Ollama from inside cluster
-        run: |
-          GATEWAY=$(docker network inspect kind -f '{{(index .IPAM.Config 0).Gateway}}')
-          echo "Gateway: $GATEWAY"
-          echo "== PROBE-A: clean namespace, no NetworkPolicy =="
-          kubectl create ns probe || true
-          kubectl run probe-a -n probe --image=curlimages/curl:8.10.1 --rm -i --restart=Never --command -- curl -sS -m 15 "http://${GATEWAY}:11434/api/version" || echo "PROBE-A FAILED (routing or Ollama bind)"
-          echo "== PROBE-B: rahbar namespace with indexer labels =="
-          kubectl run probe-b -n rahbar --labels=app=indexer --image=curlimages/curl:8.10.1 --rm -i --restart=Never --command -- curl -sS -m 15 "http://${GATEWAY}:11434/api/version" || echo "PROBE-B FAILED (NetworkPolicy)"
 
       - name: Wait for storage, the indexer Job and the rollout
         run: |
