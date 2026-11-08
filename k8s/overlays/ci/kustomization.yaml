@@ -13,3 +13,36 @@ patches:
   - target: {kind: ConfigMap, name: rahbar-config}
     patch: |-
       - {op: replace, path: /data/LLM_PROVIDER, value: stub}
+
+  # Remove ALL NetworkPolicies in CI — kindnet's ipBlock+except handling
+  # is unreliable and this is the most likely cause of indexer failing
+  # to reach the host gateway on :11434.
+  - target:
+      kind: NetworkPolicy
+    patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: ignored
+
+  # Raise indexer memory to 3Gi (OCR + embeddings on CPU can OOM at 1536Mi)
+  - target:
+      kind: Job
+      name: indexer
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 3Gi
+
+  # Make the failed pod survive so we can read logs
+  - target:
+      kind: Job
+      name: indexer
+    patch: |-
+      - op: replace
+        path: /spec/backoffLimit
+        value: 0
+      - op: replace
+        path: /spec/template/spec/restartPolicy
+        value: Never

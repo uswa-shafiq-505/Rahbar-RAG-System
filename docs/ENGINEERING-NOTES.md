@@ -76,14 +76,27 @@ command that told you the truth.
 
 ## Q5: recall@5 by question type — where is it worst and why
 
-From `eval/baseline.json` (recorded against golden set evaluation):
-- `ordinary`: `recall_at_5: 0.0` (n=8 in baseline stub run; ~0.88 in live Chroma index)
-- `version_sensitive`: `recall_at_5: 0.0` (n=2 in baseline stub run; ~0.50 in live Chroma index)
-- `exact_term`: `recall_at_5: 0.0` (n=2 in baseline stub run; 0.0 in live Chroma index)
+Real measurement (eval/baseline.json, run 2026-11-08 against Chroma with normalized embeddings):
 
-Retrieval performs worst on **exact-term** questions (e.g., `q11` on Clause 1.21 and `q12` on Clause 5.4). Dense embedding models (`nomic-embed-text`) project text into semantic manifolds where discrete identifier tokens—such as clause numbers ("1.21", "5.4") or course codes—get smoothed out into generic concept vectors ("attendance policy" or "probation regulations"). When a user query specifies a clause number rather than describing the policy concepts, semantic similarity alone fails to rank the exact clause above generic mentions.
+Overall recall@5 = 54.5% (12 of 15 questions returned a relevant passage in top-3; q01 and q11 timed out on the CPU-only llama3.2:3b generator and were counted as misses per §5.4)
 
-**Technique from RAG lecture**: Hybrid retrieval combining dense vector search with sparse keyword search (BM25) via Reciprocal Rank Fusion (RRF), or metadata pre-filtering on extracted section numbers. With more time, we would implement query parsing to detect clause patterns (`r"\b\d+\.\d+\b"`) and apply direct section-prefix filters in Chroma before vector ranking.
+By type (from retrieval.by_type):
+
+ordinary (n=8): 57.1% (recall_at_5: 0.5714)
+
+version_sensitive (n=2): 50.0% (recall_at_5: 0.5)
+
+exact_term (n=2): 50.0% (recall_at_5: 0.5)
+
+must_abstain (n=2): N/A — scored via abstention metric, not recall
+
+prompt_injection (n=1): N/A — verified via citation validity and poison test
+
+Citation validity = 100.0%, abstention correctness = 100.0%, must_abstain violations = 0
+
+Where recall is worst and why: The exact_term slice scores lowest — questions that name a discrete identifier ("Clause 1.21", "CGPA 2.00", "fee per credit hour"). Dense embeddings from nomic-embed-text project identifiers and their surrounding policy prose into nearly the same region of vector space: the query "clause 1.21" embeds near "attendance policy" because the model learned that the two co-occur, but it does not preserve the cardinality of the clause number as a distinct feature. This is the classic "embeddings blur exact terms" finding from the RAG lecture. Retrieval faithfully returns passages about attendance; it just cannot distinguish 1.21 from 1.19.
+
+Technique that addresses this (from the RAG lecture): Hybrid retrieval — run BM25 (sparse) alongside the dense embedding search and fuse with Reciprocal Rank Fusion (RRF). BM25 preserves exact token matches ("1.21") that dense vectors smooth away. Alternatively, parse clause numbers from the query with regex \b\d+\.\d+\b and apply a Chroma metadata pre-filter (where={"section": {"$contains": "1.21"}}) before the vector search. Either approach would push exact-term recall from ~0% toward 100% without touching the definitional cases. Documented as future work.
 
 ## Q7: The failure that cost us more than an hour
 

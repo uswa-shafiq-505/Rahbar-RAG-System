@@ -143,6 +143,11 @@ def embed(
                     f"embed: vector {idx} dim {len(vec)} != expected {expected_dim}"
                 )
 
+            # Normalize to unit length for L2-distance comparability
+            norm = sum(v * v for v in vec) ** 0.5
+            if norm > 0:
+                vec = [v / norm for v in vec]
+
             vectors.append(vec)
 
             if idx % 25 == 0:
