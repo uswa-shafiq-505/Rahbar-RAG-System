@@ -6,6 +6,8 @@ line. It never appears in a file you commit, and never in a log line.
 
 from __future__ import annotations
 
+from typing import Any
+
 from ...config import Settings
 from ...schemas import Answer, Passage
 
@@ -16,7 +18,12 @@ class HostedProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings   # hosted_base_url, llm_model, llm_api_key, temperature
 
-    def generate(self, question: str, passages: list[Passage]) -> Answer:
+    def generate(
+        self,
+        prompt_or_question: str,
+        passages: list[Passage] | None = None,
+        **kwargs: Any,
+    ) -> Answer:
         # STARTER-TODO(3.4): same contract as the Ollama provider, over the hosted API.
         # Many free tiers are OpenAI-compatible: POST {hosted_base_url}/chat/completions.
         raise NotImplementedError("HostedProvider.generate: see STARTER-TODO(3.4)")

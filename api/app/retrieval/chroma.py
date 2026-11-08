@@ -33,13 +33,10 @@ class ChromaRetriever(Retriever):
         self.settings = settings
         self.collection_name: str = settings.collection
 
-    def retrieve(self, question: str, top_k: int = 5, k: int | None = None) -> list[RetrievedPassage]:
+    def retrieve(self, question: str, k: int = 5) -> list[Passage]:
         """Embed question, query Chroma with superseded filter, and return top passages."""
-        if k is not None:
-            top_k = k
-
-        if top_k <= 0:
-            log.info("retrieve: question=%r top_k=%d hits=0", question[:60], top_k)
+        if k <= 0:
+            log.info("retrieve: question=%r k=%d hits=0", question[:60], k)
             return []
 
         # 1. Embed query vector using pinned model and Ollama URL
@@ -48,7 +45,7 @@ class ChromaRetriever(Retriever):
         # 2. Build Chroma query arguments with metadata filter (unless asking for old version)
         query_kwargs: dict[str, Any] = {
             "query_embeddings": [query_vec],
-            "n_results": top_k,
+            "n_results": k,
         }
         if not _asks_about_old_version(question):
             query_kwargs["where"] = {"superseded": False}
@@ -67,20 +64,31 @@ class ChromaRetriever(Retriever):
             raise RuntimeError(f"retrieve: chroma query failed: {exc}") from exc
 
         # 4. Handle empty results
-        if not res or not res.get("ids") or not res["ids"][0]:
-            log.info("retrieve: question=%r top_k=%d hits=0", question[:60], top_k)
+        if (
+            not res
+            or not res.get("ids")
+            or not res.get("documents")
+            or not res.get("metadatas")
+            or not res.get("distances")
+            or res["ids"] is None
+            or res["documents"] is None
+            or res["metadatas"] is None
+            or res["distances"] is None
+            or not res["ids"][0]
+        ):
+            log.info("retrieve: question=%r k=%d hits=0", question[:60], k)
             return []
 
-        passages: list[RetrievedPassage] = []
-        ids = res.get("ids", [[]])[0]
-        docs = res.get("documents", [[]])[0] if res.get("documents") else []
-        metas = res.get("metadatas", [[]])[0] if res.get("metadatas") else []
-        dists = res.get("distances", [[]])[0] if res.get("distances") else []
+        passages: list[Passage] = []
+        ids_list = res["ids"][0]
+        docs_list = res["documents"][0]
+        metas_list = res["metadatas"][0]
+        dists_list = res["distances"][0]
 
-        for i, chunk_id in enumerate(ids):
-            meta = metas[i] if i < len(metas) and metas[i] else {}
-            doc_text = docs[i] if i < len(docs) and docs[i] else ""
-            dist = float(dists[i]) if i < len(dists) and dists[i] is not None else 0.0
+        for i, chunk_id in enumerate(ids_list):
+            meta = metas_list[i] if i < len(metas_list) and metas_list[i] else {}
+            doc_text = docs_list[i] if i < len(docs_list) and docs_list[i] else ""
+            dist = float(dists_list[i]) if i < len(dists_list) and dists_list[i] is not None else 0.0
             log.info("chroma hit %d: dist=%.3f", i, dist)
             score = max(0.0, min(1.0, 1.0 - (dist / 500.0)))
             page_raw = meta.get("page")
@@ -98,5 +106,5 @@ class ChromaRetriever(Retriever):
             )
 
         passages.sort(key=lambda p: p.score, reverse=True)
-        log.info("retrieve: question=%r top_k=%d hits=%d", question[:60], top_k, len(passages))
+        log.info("retrieve: question=%r k=%d hits=%d", question[:60], k, len(passages))
         return passages

@@ -98,7 +98,7 @@ def answer_question(
 
     # Cache resolution
     cache = kwargs.get("cache")
-    if cache is None and getattr(settings, "redis_host", ""):
+    if cache is None and str(getattr(settings, "redis_host", "") or ""):
         try:
             from .cache import SemanticCache
             from .index_state import IndexState
@@ -152,13 +152,7 @@ def answer_question(
     # 4. Build prompt & 5. Generate
     prompt_passages = filtered_passages[:3]
     prompt = _build_prompt(question, prompt_passages)
-    try:
-        model_answer: Answer = provider.generate(prompt, settings.temperature, passages=prompt_passages)
-    except TypeError:
-        try:
-            model_answer = provider.generate(prompt, settings.temperature)
-        except TypeError:
-            model_answer = provider.generate(question, prompt_passages)
+    model_answer = provider.generate(prompt, passages=prompt_passages)
 
     if not model_answer.answered_from_context and model_answer.answer.startswith("The model could not"):
         log.info("abstained=True cached_write=False")
@@ -177,10 +171,16 @@ def answer_question(
     retrieved_keys = {(p.source, p.section, p.page) for p in raw_passages}
     valid_citations: list[Citation] = []
     for c in model_answer.citations:
-        if (c.source, c.section, c.page) in retrieved_keys:
-            valid_citations.append(c)
+        if c.page is None:
+            if any(p.source == c.source and p.section == c.section for p in raw_passages):
+                valid_citations.append(c)  # accept without page
+            else:
+                log.warning("citation_validation: dropping citation %s|%s (page None)", c.source, c.section)
         else:
-            log.warning("citation_validation: dropping fabricated citation %s|%s|%s", c.source, c.section, c.page)
+            if (c.source, c.section, c.page) in retrieved_keys:
+                valid_citations.append(c)
+            else:
+                log.warning("citation_validation: dropping fabricated citation %s|%s|%s", c.source, c.section, c.page)
 
     citations_dropped = len(model_answer.citations) - len(valid_citations)
     log.info("citation validation: citations_valid=%d citations_dropped=%d", len(valid_citations), citations_dropped)

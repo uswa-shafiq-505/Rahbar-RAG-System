@@ -57,40 +57,58 @@ def _coerce_answer_dict(raw: dict[str, Any], retrieved_passages: list[Passage] |
 
     if isinstance(raw_citations, list):
         for c in raw_citations:
+            src = ""
+            sec = ""
+            page_val: int | None = None
+            raw_str = ""
+
             if isinstance(c, int):
                 # 1-indexed rank
                 rank = c
                 if 1 <= rank <= len(passages):
                     p = passages[rank - 1]
-                    coerced_citations.append({
-                        "source": p.source,
-                        "section": p.section,
-                        "page": p.page,
-                    })
+                    src = p.source
+                    sec = p.section
+                    page_val = p.page
             elif isinstance(c, str):
+                raw_str = c
                 parts = [part.strip() for part in c.split("|")]
                 src = parts[0] if len(parts) > 0 else ""
                 sec = parts[1] if len(parts) > 1 else ""
-                page_val: int | None = None
                 if len(parts) > 2:
-                    m = re.search(r"\d+", parts[2])
+                    m = re.search(r"page\s*(\d+)", parts[2], re.IGNORECASE) or re.search(r"\d+", parts[2])
                     if m:
-                        page_val = int(m.group(0))
-                coerced_citations.append({
-                    "source": src,
-                    "section": sec,
-                    "page": page_val,
-                })
+                        page_val = int(m.group(1) if m.lastindex else m.group(0))
             elif isinstance(c, dict):
                 src = str(c.get("source") or "")
                 sec = str(c.get("section") or "")
                 raw_p = c.get("page")
-                page_val = None
+                raw_str = f"{src} {sec} {raw_p}"
                 if raw_p is not None:
-                    try:
-                        page_val = int(raw_p)
-                    except (ValueError, TypeError):
-                        page_val = None
+                    if isinstance(raw_p, int):
+                        page_val = raw_p
+                    elif isinstance(raw_p, str):
+                        m = re.search(r"page\s*(\d+)", raw_p, re.IGNORECASE) or re.search(r"\d+", raw_p)
+                        if m:
+                            page_val = int(m.group(1) if m.lastindex else m.group(0))
+
+            # If page is still None/missing: try regex `page\s+(\d+)` from citation string
+            if page_val is None and raw_str:
+                m = re.search(r"page\s*(\d+)", raw_str, re.IGNORECASE)
+                if m:
+                    page_val = int(m.group(1))
+
+            # If still None: try matching (source, section) in retrieved passages to recover page
+            if page_val is None and passages and src:
+                for p in passages:
+                    if p.source == src and (not sec or p.section == sec) and p.page is not None:
+                        page_val = p.page
+                        if not sec:
+                            sec = p.section
+                        break
+
+            # If still None: SKIP this citation entirely (do not send None page to validator)
+            if src and sec and page_val is not None:
                 coerced_citations.append({
                     "source": src,
                     "section": sec,
@@ -148,27 +166,15 @@ class OllamaProvider(LLMProvider):
 
     def generate(
         self,
-        prompt: str,
-        temperature: float | list[Passage] | None = None,
+        prompt_or_question: str,
         passages: list[Passage] | None = None,
+        **kwargs: Any,
     ) -> Answer:
         """Call Ollama /api/generate with JSON format, validate Answer, and retry once on failure."""
         try:
-            retrieved_passages: list[Passage] = []
-            if isinstance(temperature, list):
-                temp = float(self.settings.temperature)
-                retrieved_passages = temperature
-                prompt_text = _build_prompt(prompt, temperature)
-            elif temperature is not None:
-                temp = float(temperature)
-                prompt_text = prompt
-                if passages:
-                    retrieved_passages = passages
-            else:
-                temp = float(self.settings.temperature)
-                prompt_text = prompt
-                if passages:
-                    retrieved_passages = passages
+            retrieved_passages: list[Passage] = passages or []
+            prompt_text = prompt_or_question or str(kwargs.get("prompt", "")) or str(kwargs.get("question", ""))
+            temp = float(kwargs.get("temperature", self.settings.temperature))
 
             if not retrieved_passages and prompt_text:
                 for m in re.finditer(r"\[(\d+)\]\s*source=([^|\n]+?)\s*\|\s*section=([^|\n]+?)\s*\|\s*page=([^\n]+)", prompt_text):
