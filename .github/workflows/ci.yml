@@ -177,6 +177,19 @@ jobs:
           kubectl rollout status deployment/api -n rahbar --timeout=240s
           kubectl rollout status deployment/ui -n rahbar --timeout=120s
 
+      - name: Wait until the Ingress routes to a ready api
+        run: |
+          for n in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: rahbar.local' \
+              -H 'Content-Type: application/json' \
+              -d '{"question":"warm up request"}' http://localhost/api/ask)
+            echo "attempt $n: HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 3
+          done
+          kubectl get pods,endpoints,ingress -n rahbar -o wide
+          exit 1
+
       - name: Run the eval gate against the live stack, through the Ingress
         run: |
           python eval/run_eval.py --api http://localhost --host rahbar.local \
