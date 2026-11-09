@@ -85,7 +85,7 @@ jobs:
             -l app.kubernetes.io/component=controller --timeout=180s
       - name: Install kustomize (pinned)
         run: |
-          curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz | tar xz
+          curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz | tar xz
           sudo mv kustomize /usr/local/bin/
       # Deploy the exact images that build-push just published, by commit SHA.
       - name: Deploy the SHA-tagged images (prod overlay)
