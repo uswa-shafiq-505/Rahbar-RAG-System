@@ -6,13 +6,21 @@ real model. It is deterministic: the same input always gives the same output.
 
 from __future__ import annotations
 
+from typing import Any
+
 from ...schemas import Answer, Citation, Passage
 
 
 class StubProvider:
     name = "stub"
 
-    def generate(self, question: str, passages: list[Passage]) -> Answer:
+    def generate(
+        self,
+        prompt_or_question: str,
+        passages: list[Passage] | None = None,
+        **kwargs: Any,
+    ) -> Answer:
+        passages = passages or []
         if not passages:
             return Answer(
                 reasoning="stub: nothing was retrieved",

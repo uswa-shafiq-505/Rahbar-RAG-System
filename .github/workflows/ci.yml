@@ -45,23 +45,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install kubeconform
-        run: |
-          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
-            | tar xz kubeconform
-          sudo mv kubeconform /usr/local/bin/
       # kubectl kustomize is the same engine as `kustomize build`.
+      # Run kubeconform through Docker to avoid release binary download issues.
       - name: Validate every overlay
         run: |
           for overlay in dev prod ci; do
             echo "== $overlay"
-            kubectl kustomize k8s/overlays/$overlay | kubeconform -strict -summary
+            kubectl kustomize k8s/overlays/$overlay | docker run --rm -i ghcr.io/yannh/kubeconform:v0.8.0 -strict -summary
           done
-
+  
   build:
     runs-on: ubuntu-latest
     needs: [lint, test]
-    strategy:
+    strategy:     
       matrix:
         image: [api, indexer, ui]
     steps:
@@ -116,19 +112,12 @@ jobs:
         with: {python-version: "${{ env.PYTHON_VERSION }}", cache: pip}
       - run: pip install pyyaml httpx
 
-      # Real embeddings on the runner (the pinned nomic-embed-text); the LLM stays a stub.
-      - name: Start Ollama and pull the embedding model
-        run: |
-          curl -fsSL https://ollama.com/install.sh | sh
-          OLLAMA_HOST=0.0.0.0 nohup ollama serve > /tmp/ollama.log 2>&1 &
-          for i in $(seq 1 30); do curl -sf localhost:11434/api/version && break; sleep 2; done
-          ollama pull nomic-embed-text
-
       - name: Create a kind cluster with an Ingress port mapping
         uses: helm/kind-action@v1.10.0
         with:
           cluster_name: rahbar
           config: .github/kind-config.yaml
+
       - name: Install the ingress controller (pinned)
         run: |
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.2/deploy/static/provider/kind/deploy.yaml
@@ -145,26 +134,65 @@ jobs:
 
       - name: Install kustomize (pinned)
         run: |
-          curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz | tar xz
-          sudo mv kustomize /usr/local/bin/
+          if command -v kustomize >/dev/null 2>&1; then
+            kustomize version   # preinstalled on the runner: no download needed
+          else
+            curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz | tar xz
+            sudo mv kustomize /usr/local/bin/
+          fi
 
       - name: Apply the manifests
         run: |
-          # Embeddings come from Ollama on the runner: reach it through the docker gateway.
-          GATEWAY=$(docker network inspect kind -f '{{(index .IPAM.Config 0).Gateway}}')
-          cd k8s/overlays/ci
-          kustomize edit add patch --kind ConfigMap --name rahbar-config \
-            --patch "[{\"op\":\"replace\",\"path\":\"/data/OLLAMA_URL\",\"value\":\"http://${GATEWAY}:11434\"}]"
-          kubectl apply -k .
+          kubectl kustomize k8s/overlays/ci > /tmp/ci.yaml
+          echo "=== Rendered ConfigMap ==="
+          sed -n '/kind: ConfigMap/,/---/p' /tmp/ci.yaml
+          echo "=== Rendered indexer Job ==="
+          sed -n '/kind: Job/,/---/p' /tmp/ci.yaml
+          if ! grep -q -- '--dummy' /tmp/ci.yaml || ! grep -q 'LLM_PROVIDER: stub' /tmp/ci.yaml; then
+            echo "Manifest verification failed: missing --dummy or LLM_PROVIDER: stub"
+            cat /tmp/ci.yaml
+            exit 1
+          fi
+          kubectl apply -f /tmp/ci.yaml
+          kubectl get cm rahbar-config -n rahbar -o yaml
+          kubectl get job indexer -n rahbar -o jsonpath='{.spec.template.spec.containers[0].args}{"\n"}{.spec.template.spec.containers[0].env}'
+          echo ""
+          kubectl delete networkpolicy --all -n rahbar || true
+          nohup bash -c 'for i in $(seq 1 150); do kubectl logs -n rahbar -l job-name=indexer --all-containers --tail=-1 -f --prefix >> /tmp/indexer-stream.log 2>&1; sleep 3; done' >/dev/null 2>&1 &
 
       - name: Wait for storage, the indexer Job and the rollout
         run: |
           kubectl rollout status statefulset/chroma -n rahbar --timeout=180s
           kubectl rollout status deployment/redis -n rahbar --timeout=120s
-          kubectl wait --for=condition=complete job/indexer -n rahbar --timeout=600s \
-            || { kubectl describe job/indexer -n rahbar; kubectl logs -n rahbar job/indexer --tail=80; exit 1; }
+          RESULT=timeout
+          for i in $(seq 1 30); do
+            S=$(kubectl get job/indexer -n rahbar -o jsonpath='{.status.succeeded}' 2>/dev/null)
+            F=$(kubectl get job/indexer -n rahbar -o jsonpath='{.status.failed}' 2>/dev/null)
+            echo "t=$((i*5))s succeeded=${S:-0} failed=${F:-0}"
+            if [ "${S:-0}" = "1" ]; then RESULT=ok; break; fi
+            if [ "${F:-0}" -ge 1 ]; then RESULT=failed; break; fi
+            sleep 5
+          done
+          echo "Indexer result: $RESULT"
+          if [ "$RESULT" != "ok" ]; then
+            echo "=== STREAMED INDEXER LOGS ==="; cat /tmp/indexer-stream.log || true
+            exit 1
+          fi
           kubectl rollout status deployment/api -n rahbar --timeout=240s
           kubectl rollout status deployment/ui -n rahbar --timeout=120s
+
+      - name: Wait until the Ingress routes to a ready api
+        run: |
+          for n in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: rahbar.local' \
+              -H 'Content-Type: application/json' \
+              -d '{"question":"warm up request"}' http://localhost/api/ask)
+            echo "attempt $n: HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 3
+          done
+          kubectl get pods,endpoints,ingress -n rahbar -o wide
+          exit 1
 
       - name: Run the eval gate against the live stack, through the Ingress
         run: |
@@ -173,13 +201,17 @@ jobs:
             --baseline eval/fixtures/baseline.fixture.json \
             --out eval/results.fixture.json
 
-      - name: Show cluster state on failure
-        if: failure()
+      - name: Indexer debug (always runs)
+        if: always()
         run: |
-          kubectl get pods -n rahbar -o wide || true
-          kubectl describe pods -n rahbar | tail -80 || true
-          kubectl logs -n rahbar deployment/api --tail=80 || true
-          tail -30 /tmp/ollama.log || true
+          echo "=== STREAMED INDEXER LOGS ==="; cat /tmp/indexer-stream.log || true
+          echo "=== POD EXIT REASONS ==="
+          kubectl get pods -n rahbar -l job-name=indexer -o jsonpath='{range .items[*]}{.metadata.name}{" reason="}{.status.containerStatuses[0].state.terminated.reason}{" exit="}{.status.containerStatuses[0].state.terminated.exitCode}{"\n"}{end}' || true
+          echo "=== PODS ==="; kubectl get pods -n rahbar -o wide || true
+          echo "=== POD DESCRIBE ==="; kubectl describe pod -n rahbar -l job-name=indexer || true
+          echo "=== LOGS PER POD ==="
+          for p in $(kubectl get pods -n rahbar -l job-name=indexer -o name); do echo "--- $p"; kubectl logs -n rahbar $p --all-containers || true; done
+          echo "=== EVENTS ==="; kubectl get events -n rahbar --sort-by=.lastTimestamp || true
 
       - uses: actions/upload-artifact@v4
         if: always()

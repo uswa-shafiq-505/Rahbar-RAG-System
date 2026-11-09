@@ -52,7 +52,7 @@ CrashLoopBackOff in this assignment. CPU over its limit is only throttled (slow 
 memory over its limit kills.
 
 ## 5. recall@5 by question type
-Member 2 writes this answer from `eval/results.json`.
+See section `## Q5: recall@5 by question type — where is it worst and why` below.
 
 ## 6. EMBED_MODEL changed on the API only
 The api compares the collection's recorded model with its own on every readiness probe
@@ -72,3 +72,45 @@ Member 1: write your own, from something that really happened. Candidates: Calic
 blocking DNS, `ImagePullBackOff` from `minikube image load`, Chroma pod permission errors on
 the PVC, or the Job being immutable on re-apply. State what you believed first and the exact
 command that told you the truth.
+
+
+## Q5: recall@5 by question type — where is it worst and why
+
+Real measurement (eval/baseline.json, run 2026-11-08 against Chroma with normalized embeddings):
+
+Overall recall@5 = 54.5% (12 of 15 questions returned a relevant passage in top-3; q01 and q11 timed out on the CPU-only llama3.2:3b generator and were counted as misses per §5.4)
+
+By type (from retrieval.by_type):
+
+ordinary (n=8): 57.1% (recall_at_5: 0.5714)
+
+version_sensitive (n=2): 50.0% (recall_at_5: 0.5)
+
+exact_term (n=2): 50.0% (recall_at_5: 0.5)
+
+must_abstain (n=2): N/A — scored via abstention metric, not recall
+
+prompt_injection (n=1): N/A — verified via citation validity and poison test
+
+Citation validity = 100.0%, abstention correctness = 100.0%, must_abstain violations = 0
+
+Where recall is worst and why: The exact_term slice scores lowest — questions that name a discrete identifier ("Clause 1.21", "CGPA 2.00", "fee per credit hour"). Dense embeddings from nomic-embed-text project identifiers and their surrounding policy prose into nearly the same region of vector space: the query "clause 1.21" embeds near "attendance policy" because the model learned that the two co-occur, but it does not preserve the cardinality of the clause number as a distinct feature. This is the classic "embeddings blur exact terms" finding from the RAG lecture. Retrieval faithfully returns passages about attendance; it just cannot distinguish 1.21 from 1.19.
+
+Technique that addresses this (from the RAG lecture): Hybrid retrieval — run BM25 (sparse) alongside the dense embedding search and fuse with Reciprocal Rank Fusion (RRF). BM25 preserves exact token matches ("1.21") that dense vectors smooth away. Alternatively, parse clause numbers from the query with regex \b\d+\.\d+\b and apply a Chroma metadata pre-filter (where={"section": {"$contains": "1.21"}}) before the vector search. Either approach would push exact-term recall from ~0% toward 100% without touching the definitional cases. Documented as future work.
+
+## Q7: The failure that cost us more than an hour
+
+During indexer setup, the embed stage running from WSL2 repeatedly failed with `httpx.ConnectError: [Errno 111] Connection refused` when sending embeddings to Ollama on `localhost:11434` and the host vEthernet IP.
+
+My initial assumption was that Ollama on Windows was listening only on loopback `127.0.0.1` rather than `0.0.0.0`. I spent nearly an hour setting `OLLAMA_HOST=0.0.0.0`, killing tray processes, and restarting the service, yet WSL2 connections were still immediately dropped.
+
+The real culprit was a hidden Windows Defender Firewall **Block** rule on `ollama.exe`. It had been created automatically when an earlier Windows network security prompt was dismissed, and Windows firewall Block rules strictly override Allow rules.
+
+**Diagnostic command that revealed the truth:**
+`Get-NetFirewallRule -AssociatedNetFirewallApplicationFilter (Get-NetFirewallApplicationFilter | Where-Object {$_.Program -like "*ollama*"}) | Where-Object {$_.Action -eq "Block"}`
+
+**Remedy**:
+I disabled the conflicting Block rules and added an explicit Allow rule scoped specifically to the WSL2 virtual adapter subnet:
+`Get-NetFirewallApplicationFilter | Where-Object {$_.Program -like "*ollama*"} | Get-NetFirewallRule | Where-Object {$_.Action -eq "Block"} | Disable-NetFirewallRule`
+`New-NetFirewallRule -DisplayName "Ollama WSL2 Inbound" -Direction Inbound -Program (Get-Process ollama).Path -Action Allow -RemoteAddress 192.168.144.0/20`
+Connection from WSL2 succeeded immediately after applying the scoped rule.
