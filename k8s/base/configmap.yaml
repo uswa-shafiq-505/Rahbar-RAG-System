@@ -38,4 +38,7 @@ data:
   CHUNK_SIZE: "400"
   CHUNK_OVERLAP: "50"
   CORPUS_DIR: "/corpus"
+  # --- RAGOps (Assignment 03): the shared volume ---
+  DATA_DIR: "/data"              # lake/, quarantine/, archive/, state/, results/
+  TRACE_DIR: "/data/traces"      # one traces-<pod>.jsonl per api pod
   LOG_LEVEL: "INFO"

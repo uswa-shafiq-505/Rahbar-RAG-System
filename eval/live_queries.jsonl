@@ -1,0 +1,44 @@
+{"id": "q01", "topic": "attendance", "group": "in_domain", "query": "How many percent attendance do I need to sit the final exam?"}
+{"id": "q02", "topic": "attendance", "group": "in_domain", "query": "What happens if my attendance drops below the minimum in a course?"}
+{"id": "q03", "topic": "attendance", "group": "in_domain", "query": "Can the head of department excuse missed lectures for medical reasons?"}
+{"id": "q04", "topic": "attendance", "group": "in_domain", "query": "Which clause of the academic rules covers attendance?"}
+{"id": "q05", "topic": "cgpa_warning", "group": "in_domain", "query": "At what CGPA does a student go on academic warning?"}
+{"id": "q06", "topic": "cgpa_warning", "group": "in_domain", "query": "How many semesters can I stay on academic warning before being dropped?"}
+{"id": "q07", "topic": "cgpa_warning", "group": "in_domain", "query": "What is the minimum CGPA to graduate from the BS programme?"}
+{"id": "q08", "topic": "repeat_course", "group": "in_domain", "query": "If I repeat a course I failed, does the new grade replace the old one?"}
+{"id": "q09", "topic": "repeat_course", "group": "in_domain", "query": "Can I retake a course just to improve my CGPA?"}
+{"id": "q10", "topic": "repeat_course", "group": "in_domain", "query": "Is there a cap on the grade I can get when repeating a course?"}
+{"id": "q11", "topic": "fees", "group": "in_domain", "query": "How much is the tuition fee per credit hour for a BS student?"}
+{"id": "q12", "topic": "fees", "group": "in_domain", "query": "What is the refund timeline if I withdraw from a course?"}
+{"id": "q13", "topic": "fees", "group": "in_domain", "query": "Which miscellaneous fees do I pay each semester?"}
+{"id": "q14", "topic": "fees", "group": "in_domain", "query": "Is the tuition fee different for MS students?"}
+{"id": "q15", "topic": "grading", "group": "in_domain", "query": "How many grade points is an A minus worth?"}
+{"id": "q16", "topic": "grading", "group": "in_domain", "query": "What grade does a student receive for failing the attendance requirement?"}
+{"id": "q17", "topic": "grading", "group": "in_domain", "query": "How is the semester GPA calculated?"}
+{"id": "q18", "topic": "genai_policy", "group": "in_domain", "query": "Am I allowed to use generative AI tools in my assignments?"}
+{"id": "q19", "topic": "genai_policy", "group": "in_domain", "query": "What must I disclose when I use an AI tool for coursework?"}
+{"id": "q20", "topic": "genai_policy", "group": "in_domain", "query": "What is the penalty for submitting AI generated work as my own?"}
+{"id": "q21", "topic": "rule_versions", "group": "in_domain", "query": "What changed between the 2023 and the 2026 academic rules?"}
+{"id": "q22", "topic": "rule_versions", "group": "in_domain", "query": "Which academic rules apply to students admitted before 2026?"}
+{"id": "q23", "topic": "rule_versions", "group": "in_domain", "query": "Is the attendance clause numbered the same in the prospectus and the handbook?"}
+{"id": "q24", "topic": "course_registration", "group": "in_domain", "query": "Can I register for a course after failing its prerequisite?"}
+{"id": "q25", "topic": "course_registration", "group": "in_domain", "query": "What is the maximum number of credit hours I can register in a semester?"}
+{"id": "q26", "topic": "course_registration", "group": "in_domain", "query": "Until when can I drop a course without a grade penalty?"}
+{"id": "q27", "topic": "examinations", "group": "in_domain", "query": "What happens if I miss a mid-term exam?"}
+{"id": "q28", "topic": "examinations", "group": "in_domain", "query": "How do I apply for re-evaluation of my final paper?"}
+{"id": "q29", "topic": "transport_hostel", "group": "uncovered", "query": "What are the hostel rules for visitors?"}
+{"id": "q30", "topic": "transport_hostel", "group": "uncovered", "query": "How much does a hostel room cost per semester?"}
+{"id": "q31", "topic": "transport_hostel", "group": "uncovered", "query": "Does the university run a bus service from Rawalpindi?"}
+{"id": "q32", "topic": "transport_hostel", "group": "uncovered", "query": "What are the bus timings for the morning shift?"}
+{"id": "q33", "topic": "annual_report", "group": "uncovered", "query": "How many faculty members with a PhD does the Islamabad campus have?"}
+{"id": "q34", "topic": "annual_report", "group": "uncovered", "query": "How many students graduated in the last annual report year?"}
+{"id": "q35", "topic": "annual_report", "group": "uncovered", "query": "How many research publications did the university report in 2023?"}
+{"id": "q36", "topic": "scholarships", "group": "uncovered", "query": "Which scholarships are available for undergraduate students?"}
+{"id": "q37", "topic": "scholarships", "group": "uncovered", "query": "What is the minimum CGPA to keep a need-based scholarship?"}
+{"id": "q38", "topic": "scholarships", "group": "uncovered", "query": "How do I apply for financial aid?"}
+{"id": "q39", "topic": "calendar", "group": "uncovered", "query": "When do the Fall 2026 final exams start?"}
+{"id": "q40", "topic": "calendar", "group": "uncovered", "query": "Which days are public holidays in the 2026-27 academic calendar?"}
+{"id": "q41", "topic": "program_outcomes", "group": "uncovered", "query": "How many programme learning outcomes does Electrical Engineering have since 2024?"}
+{"id": "q42", "topic": "program_outcomes", "group": "uncovered", "query": "Which learning outcome was removed from the Electrical Engineering programme in 2024?"}
+{"id": "q43", "topic": "entrepreneurship", "group": "uncovered", "query": "Can faculty members hold equity in a start-up that uses university labs?"}
+{"id": "q44", "topic": "entrepreneurship", "group": "uncovered", "query": "Who approves a faculty start-up under the entrepreneurship policy?"}

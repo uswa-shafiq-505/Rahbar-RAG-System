@@ -1,0 +1,6 @@
+# Runtime dependencies of the evaluation image. Member 2: add what the suite needs here.
+httpx==0.28.1
+pyyaml==6.0.2
+numpy==2.2.6
+pydantic==2.11.4
+chromadb-client==1.0.12

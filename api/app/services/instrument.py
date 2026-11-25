@@ -7,6 +7,7 @@ import time
 from typing import Any
 
 from ..routes import metrics as m
+from . import metrics_hooks
 from ..schemas import Answer, Passage
 
 
@@ -18,9 +19,12 @@ class TimedRetriever:
     def retrieve(self, question: str, k: int) -> list[Passage]:
         start = time.perf_counter()
         try:
-            return self._inner.retrieve(question, k)  # type: ignore[no-any-return]
+            passages: list[Passage] = self._inner.retrieve(question, k)
         finally:
             m.RETRIEVAL_SECONDS.observe(time.perf_counter() - start)
+        if passages:
+            metrics_hooks.top1_similarity(max(p.score for p in passages))
+        return passages
 
 
 class TimedProvider:

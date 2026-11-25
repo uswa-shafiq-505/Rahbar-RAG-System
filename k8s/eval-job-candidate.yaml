@@ -1,0 +1,68 @@
+# The evaluation suite as a Job (Assignment 03, F2): runs the three-level suite against the CANDIDATE
+# api, writes /data/results/<timestamp>.json, then applies the release gate. The Job fails (and
+# exits non-zero) when the gate fails. It compares with the baseline and never overwrites it.
+#   kubectl delete job eval-candidate -n rahbar --ignore-not-found && python3 scripts/render.py k8s/eval-job-candidate.yaml | kubectl apply -f -
+# (a Job cannot be edited in place; scripts/run-job.sh does the delete, apply, logs and exit code)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eval-candidate
+  namespace: rahbar
+  labels: {app: eval, app.kubernetes.io/part-of: rahbar}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels: {app: eval, app.kubernetes.io/part-of: rahbar}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: eval-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: eval
+          image: rahbar-eval:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              python -m ragops.suite --out /data/results --api-url "$API_URL" --collection "$COLLECTION"
+              python scripts/gate.py --results /data/results --baseline /data/results/baseline.json \
+                --config /config/gate.yaml
+          envFrom:
+            - configMapRef: {name: rahbar-config}
+          env:
+            - {name: API_URL, value: "http://api-candidate:8000"}
+            - {name: COLLECTION, value: "${COLLECTION}"}
+          # Embedding the paraphrase pairs and judging answers holds more memory than serving.
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1536Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: data, mountPath: /data}
+            - {name: gate, mountPath: /config, readOnly: true}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 256Mi}
+        - name: data
+          persistentVolumeClaim: {claimName: ragops-data}
+        - name: gate
+          configMap: {name: gate-thresholds}

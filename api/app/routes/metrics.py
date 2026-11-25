@@ -28,6 +28,11 @@ CACHE_LOOKUPS = Counter("rahbar_cache_lookups_total", "Semantic cache lookups", 
 CACHE_HIT_RATIO = Gauge("rahbar_cache_hit_ratio", "Cache hits / lookups since process start")
 ABSTENTIONS = Counter("rahbar_abstentions_total", "Answers declined: corpus lacks the answer")
 FALLBACKS = Counter("rahbar_fallbacks_total", "Safe canned responses after a validation failure")
+TOP1_SIMILARITY = Histogram(
+    "rahbar_top1_similarity", "Similarity of the best retrieved chunk (higher is closer)",
+    buckets=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0))
+INJECTIONS = Counter("rahbar_injection_attempts_total",
+                     "Prompt-injection attempts flagged by a guardrail")
 TOKENS = Counter("rahbar_tokens_total", "Approximate LLM tokens", ["direction"])
 
 
