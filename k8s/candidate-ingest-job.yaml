@@ -1,0 +1,59 @@
+# Builds the CANDIDATE collection (Assignment 03, C1/F3): the same ingestion code as the live
+# Job, but writing collection ${COLLECTION} with the candidate's settings. It is a manual Job: run it
+# with `make candidate-ingest COLLECTION=rahbar_candidate CHUNK_SIZE=300 CHUNK_OVERLAP=50`.
+# Never run it at the same time as the indexer Job or the reindex CronJob (one writer at a time).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: candidate-ingest
+  namespace: rahbar
+  labels: {app: indexer, app.kubernetes.io/part-of: rahbar}
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels: {app: indexer, app.kubernetes.io/part-of: rahbar}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: indexer-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: indexer
+          image: rahbar-indexer:dev
+          imagePullPolicy: IfNotPresent
+          args: ["python", "-m", "pipeline.run"]
+          envFrom:
+            - configMapRef: {name: rahbar-config}
+          env:                      # these override the ConfigMap for this Job only
+            - {name: CHROMA_COLLECTION, value: "${COLLECTION}"}
+            - {name: CHUNK_SIZE, value: "${CHUNK_SIZE}"}
+            - {name: CHUNK_OVERLAP, value: "${CHUNK_OVERLAP}"}
+            - {name: EMBED_MODEL, value: "${EMBED_MODEL}"}
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1536Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 1Gi}
+        - name: data
+          persistentVolumeClaim: {claimName: ragops-data}

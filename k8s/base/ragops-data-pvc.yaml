@@ -1,0 +1,16 @@
+# One volume for everything RAGOps keeps (Assignment 03, F1). Mounted at /data:
+#   lake/incoming   documents waiting to be ingested     quarantine/   documents that failed verification
+#   archive/        superseded versions (restorable)      state/        hashes and the chunk manifest
+#   traces/         traces-<pod>.jsonl, one per api pod   results/      eval results, gate decisions, baseline
+# ReadWriteOnce: every pod that mounts it must run on the same node. That holds on minikube and
+# kind (one node). On a multi-node cluster this would need a ReadWriteMany volume.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ragops-data
+  namespace: rahbar
+  labels: {app.kubernetes.io/part-of: rahbar}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: {storage: 2Gi}

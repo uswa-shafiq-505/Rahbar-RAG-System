@@ -24,6 +24,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: api
@@ -34,6 +35,10 @@ spec:
           envFrom:
             - configMapRef: {name: rahbar-config}
             - secretRef: {name: rahbar-secret, optional: true}   # LLM_API_KEY, hosted mode only
+          env:
+            - name: POD_NAME           # names this pod's trace file
+              valueFrom:
+                fieldRef: {fieldPath: metadata.name}
           # Three probes, three jobs (section 4.3).
           startupProbe:        # finished booting? liveness and readiness wait while this runs
             httpGet: {path: /healthz, port: http}
@@ -69,6 +74,9 @@ spec:
                 - ALL
           volumeMounts:
             - {name: tmp, mountPath: /tmp}
+            - {name: data, mountPath: /data}     # trace files (TRACE_DIR)
       volumes:
         - name: tmp
           emptyDir: {sizeLimit: 64Mi}
+        - name: data
+          persistentVolumeClaim: {claimName: ragops-data}

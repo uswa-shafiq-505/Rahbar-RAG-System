@@ -13,6 +13,9 @@ resources:
   - ingress.yaml
   - hpa.yaml
   - networkpolicy.yaml
+  - networkpolicy-ragops.yaml
+  - ragops-data-pvc.yaml
+  - gate-thresholds.yaml
   - indexer-job.yaml
   - reindex-cronjob.yaml
 # secret.placeholder.yaml is intentionally NOT listed: applying it would overwrite the real

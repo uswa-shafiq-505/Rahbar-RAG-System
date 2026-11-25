@@ -26,6 +26,7 @@ spec:
             runAsNonRoot: true
             runAsUser: 10001
             runAsGroup: 10001
+            fsGroup: 10001
             seccompProfile: {type: RuntimeDefault}
           initContainers:
             - name: wait-for-chroma
@@ -81,6 +82,9 @@ spec:
                     - ALL
               volumeMounts:
                 - {name: tmp, mountPath: /tmp}
+                - {name: data, mountPath: /data}     # data lake, quarantine, archive, state, reports
           volumes:
             - name: tmp
               emptyDir: {sizeLimit: 1Gi}
+            - name: data
+              persistentVolumeClaim: {claimName: ragops-data}
