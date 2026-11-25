@@ -1,0 +1,87 @@
+{
+  "base_dir": "eval\\fixtures",
+  "base_documents": [
+    "academic-rules-2023.md",
+    "fees-2026.md"
+  ],
+  "files": 11,
+  "planted": [
+    {
+      "file": "copy-of-first-base.md",
+      "problem": "exact duplicate",
+      "expected_check": "uniqueness",
+      "note": "byte copy of academic-rules-2023.md",
+      "sha256": "fc792c89154d5b13b410e870f90870118b771ebdb250fddccec73e7f386856d8"
+    },
+    {
+      "file": "copy-of-last-base.txt",
+      "problem": "exact duplicate",
+      "expected_check": "uniqueness",
+      "note": "byte copy of fees-2026.md",
+      "sha256": "b29928eb1b0d84fc21514c13924cd18b60523276d5e50afb465fa183a1d32310"
+    },
+    {
+      "file": "first-base-web-version.md",
+      "problem": "near-duplicate",
+      "expected_check": "uniqueness (embedding similarity)",
+      "note": "academic-rules-2023.md with small wording edits",
+      "sha256": "5e23c29030e3d1f438dbdc9efef4e38f75066176088f22387925c5272dafdc58"
+    },
+    {
+      "file": "fees-2027.md",
+      "problem": "newer version of an existing document",
+      "expected_check": "recency",
+      "note": "supersedes fees-2026.md; the old version must be archived",
+      "sha256": "40645eccb48716f6e27c342fd4e91ee6293ad66964d77ec4dad8cce690e3189e"
+    },
+    {
+      "file": "scanned-circular.pdf",
+      "problem": "corrupt file (truncated PDF)",
+      "expected_check": "quality",
+      "note": "extraction fails or yields no text",
+      "sha256": "2d5b4a7f34d1f017ea50451c6ed2856e987ce9450d9199d5c7aae14e99015d90"
+    },
+    {
+      "file": "attendance-circular.md",
+      "problem": "truncated text",
+      "expected_check": "completeness (text not truncated)",
+      "note": "ends mid-word, no final sentence",
+      "sha256": "47c62a8d5a2781b40bc81936e9e00c8c2ce7e4fcb9c67703ce3115236b172b13"
+    },
+    {
+      "file": "notice-board-scrap.md",
+      "problem": "missing metadata",
+      "expected_check": "completeness (metadata present)",
+      "note": "no source, title, date, version or page count",
+      "sha256": "6f8b5a6d7c0082398c51dd286290535107fe8f39aa001465bf23f7c15736673f"
+    },
+    {
+      "file": "parking-permit-rules-2026.md",
+      "problem": "injected instruction",
+      "expected_check": "guardrail (not a verification check)",
+      "note": "passes verification; must be neutralised by the injection rail at query time",
+      "sha256": "ced58d4eb049616aafae3ecab13bb6d7e4efd72666b553b105967e9494ccd12b"
+    },
+    {
+      "file": "library-borrowing-rules-2026.md",
+      "problem": "clean document (control)",
+      "expected_check": "none: must pass all four checks",
+      "note": "",
+      "sha256": "2dcd2f1aa1879e84d62de18da40edaaeae00aeedd33a3e7a349ec18f2e09e0e8"
+    },
+    {
+      "file": "laptop-loan-policy-2026.md",
+      "problem": "clean document (control)",
+      "expected_check": "none: must pass all four checks",
+      "note": "",
+      "sha256": "7d3578a56a03be59270c0aa7a32675695bd72fe901b96c972d3e2f1129588756"
+    },
+    {
+      "file": "exam-reevaluation-procedure-2026.md",
+      "problem": "clean document (control)",
+      "expected_check": "none: must pass all four checks",
+      "note": "",
+      "sha256": "bbe7ad2a86f739a2e375619bf42f9db7a8c168e280247db0bf64388fec58c77f"
+    }
+  ]
+}
