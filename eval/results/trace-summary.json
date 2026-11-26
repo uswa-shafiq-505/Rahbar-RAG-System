@@ -1,0 +1,35 @@
+{
+  "queries": 1,
+  "abstention_rate": 0.0,
+  "cache_hit_rate": null,
+  "cache": {
+    "unknown": 1
+  },
+  "injection_attempts_flagged": 0,
+  "top1_similarity": {
+    "count": 0,
+    "mean": null,
+    "p10": null,
+    "median": null,
+    "p90": null,
+    "histogram": {
+      "0.0-0.1": 0,
+      "0.1-0.2": 0,
+      "0.2-0.3": 0,
+      "0.3-0.4": 0,
+      "0.4-0.5": 0,
+      "0.5-0.6": 0,
+      "0.6-0.7": 0,
+      "0.7-0.8": 0,
+      "0.8-0.9": 0,
+      "0.9-1.0": 0
+    }
+  },
+  "latency_ms": {},
+  "collections": {
+    "?": 1
+  },
+  "embed_models": {
+    "?": 1
+  }
+}
