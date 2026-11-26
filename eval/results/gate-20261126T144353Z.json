@@ -1,0 +1,48 @@
+{
+  "candidate": "/data/results/20261126T144324Z.json",
+  "passed": false,
+  "rows": [
+    {
+      "rule": "recall_at_5 drop",
+      "value": 0.0,
+      "limit": "<= 0.020",
+      "ok": true,
+      "note": "baseline 0.900, candidate 0.900"
+    },
+    {
+      "rule": "faithfulness",
+      "value": 0.88,
+      "limit": ">= 0.800",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "rule": "citation_validity",
+      "value": 1.0,
+      "limit": ">= 0.950",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "rule": "latency p95 (s)",
+      "value": 41.38,
+      "limit": "<= 30.0",
+      "ok": false,
+      "note": ""
+    },
+    {
+      "rule": "abstention vs baseline",
+      "value": 1.0,
+      "limit": ">= 1.000",
+      "ok": true,
+      "note": ""
+    }
+  ],
+  "thresholds": {
+    "max_recall_at_5_drop": 0.02,
+    "min_faithfulness": 0.8,
+    "min_citation_validity": 0.95,
+    "max_latency_p95_seconds": 30.0,
+    "min_abstention_correctness": "baseline"
+  }
+}

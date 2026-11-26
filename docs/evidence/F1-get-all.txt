@@ -1,0 +1,56 @@
+NAME                                  READY   STATUS      RESTARTS      AGE
+pod/api-74d76dcb46-rc9th              0/1     Running     0             7m17s
+pod/api-7db7849d66-8bg77              1/1     Running     1 (42m ago)   15d
+pod/api-7db7849d66-lbsr5              1/1     Running     1 (42m ago)   15d
+pod/api-7db7849d66-xtl8w              1/1     Running     1 (42m ago)   15d
+pod/chroma-0                          1/1     Running     2 (42m ago)   19d
+pod/data-loader                       1/1     Running     0             3m
+pod/indexer-l6hkp                     0/1     Completed   0             15d
+pod/manual-reindex-1794325389-j2cpq   0/1     Completed   0             15d
+pod/redis-687f67b6b7-4zhl8            1/1     Running     2 (42m ago)   19d
+pod/reindex-29921940-g9khv            0/1     Completed   0             42m
+pod/ui-b9cc6d7fd-cp2js                1/1     Running     2 (42m ago)   19d
+
+NAME             TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+service/api      ClusterIP   10.99.18.133     <none>        8000/TCP   19d
+service/chroma   ClusterIP   10.97.203.41     <none>        8000/TCP   19d
+service/redis    ClusterIP   10.100.153.226   <none>        6379/TCP   19d
+service/ui       ClusterIP   10.108.173.57    <none>        80/TCP     19d
+
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/api     3/3     1            3           19d
+deployment.apps/redis   1/1     1            1           19d
+deployment.apps/ui      1/1     1            1           19d
+
+NAME                               DESIRED   CURRENT   READY   AGE
+replicaset.apps/api-597986c5b7     0         0         0       19d
+replicaset.apps/api-5b6b75747d     0         0         0       19d
+replicaset.apps/api-74d76dcb46     1         1         0       7m17s
+replicaset.apps/api-7db7849d66     3         3         3       19d
+replicaset.apps/api-86cf8f6499     0         0         0       19d
+replicaset.apps/redis-687f67b6b7   1         1         1       19d
+replicaset.apps/ui-b9cc6d7fd       1         1         1       19d
+
+NAME                      READY   AGE
+statefulset.apps/chroma   1/1     19d
+
+NAME                                      REFERENCE        TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/api   Deployment/api   cpu: 3%/70%   3         8         3          19d
+
+NAME                    SCHEDULE    TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+cronjob.batch/reindex   0 3 * * 0   <none>     False     0        3d13h           19d
+
+NAME                                  STATUS     COMPLETIONS   DURATION   AGE
+job.batch/indexer                     Complete   1/1           12s        15d
+job.batch/manual-reindex-1794325389   Complete   1/1           13s        15d
+job.batch/reindex-29921940            Complete   1/1           46s        42m
+
+NAME                                         STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/cache-data             Bound    pvc-4652d4bd-41b0-48a7-a295-f2cc9e829253   1Gi        RWO            standard       <unset>                 19d
+persistentvolumeclaim/chroma-data-chroma-0   Bound    pvc-df50798d-80a2-4206-925f-7461e4877487   2Gi        RWO            standard       <unset>                 19d
+persistentvolumeclaim/ragops-data            Bound    pvc-44b7bac7-fe68-4e0b-9352-56a0edf4b35d   2Gi        RWO            standard       <unset>                 7m17s
+
+NAME                         DATA   AGE
+configmap/gate-thresholds    1      7m18s
+configmap/kube-root-ca.crt   1      19d
+configmap/rahbar-config      23     19d

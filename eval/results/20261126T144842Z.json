@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "timestamp": "2026-11-26T14:48:42.865856+00:00",
+    "collection": "rahbar_good",
+    "embed_model": "nomic-embed-text",
+    "index_version": "1",
+    "seed": 42,
+    "git_sha": "dev"
+  },
+  "metrics": {
+    "recall_at_3": 0.82,
+    "recall_at_5": 0.9,
+    "mrr": 0.85,
+    "ndcg_at_5": 0.88,
+    "faithfulness": 0.88,
+    "citation_validity": 1.0,
+    "abstention_correctness": 1.0,
+    "latency_p50": 17.69,
+    "latency_p95": 26.54
+  }
+}

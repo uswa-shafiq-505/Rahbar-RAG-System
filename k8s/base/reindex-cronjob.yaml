@@ -67,6 +67,11 @@ spec:
               args: ["python", "-m", "pipeline.run"]
               envFrom:
                 - configMapRef: {name: rahbar-config}
+              env:
+                - name: OLLAMA_HOST
+                  value: "http://ollama:11434"
+                - name: OLLAMA_URL
+                  value: "http://ollama:11434"
               resources:
                 requests:
                   cpu: 250m
