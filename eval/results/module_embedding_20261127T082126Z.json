@@ -1,0 +1,203 @@
+{
+  "ts": "2026-11-27T08:21:26Z",
+  "embed_model": "nomic-embed-text",
+  "paraphrase": {
+    "mean": 0.843346,
+    "pairs": [
+      {
+        "id": "p01",
+        "a_short": "Students must maintain 100% attendance, though up to 20% ...",
+        "b_short": "An undergraduate must attend at least 80% of lectures and...",
+        "sim": 0.810132
+      },
+      {
+        "id": "p02",
+        "a_short": "If an undergraduate student's CGPA drops below 2.00 at th...",
+        "b_short": "Undergraduate degree candidates receive academic probatio...",
+        "sim": 0.767894
+      },
+      {
+        "id": "p03",
+        "a_short": "When the warning count reaches three consecutive warnings...",
+        "b_short": "Accumulating three academic warnings in a row leads to au...",
+        "sim": 0.77788
+      },
+      {
+        "id": "p04",
+        "a_short": "Credit exemption for courses completed at another accredi...",
+        "b_short": "Transfer students from other universities may receive cre...",
+        "sim": 0.843387
+      },
+      {
+        "id": "p05",
+        "a_short": "Students may freeze their semester for up to two semester...",
+        "b_short": "Admission can be frozen for at most two semesters upon pa...",
+        "sim": 0.906179
+      },
+      {
+        "id": "p06",
+        "a_short": "When a course is repeated, only the grade points earned i...",
+        "b_short": "For repeated courses, CGPA uses solely the latest grade a...",
+        "sim": 0.864837
+      },
+      {
+        "id": "p07",
+        "a_short": "A student must register for both the theory and lab compo...",
+        "b_short": "Theory and associated lab sections require simultaneous e...",
+        "sim": 0.856435
+      },
+      {
+        "id": "p08",
+        "a_short": "To register for Final Year Project I (FYP-I), a student m...",
+        "b_short": "Enrollment in FYP-I requires clearing every course prescr...",
+        "sim": 0.84236
+      },
+      {
+        "id": "p09",
+        "a_short": "At admission, students pay a one-time non-refundable Admi...",
+        "b_short": "New entrants must submit Rs. 30,000 for non-refundable ad...",
+        "sim": 0.856241
+      },
+      {
+        "id": "p10",
+        "a_short": "Under HEC tuition refund rules, 100% is refunded up to da...",
+        "b_short": "Tuition fee refunds scale down after classes start: full ...",
+        "sim": 0.81869
+      },
+      {
+        "id": "p11",
+        "a_short": "An Incomplete (I) grade is temporary and converts automat...",
+        "b_short": "Failure to clear an I grade prior to the close of the fol...",
+        "sim": 0.831057
+      },
+      {
+        "id": "p12",
+        "a_short": "Graduating students earn Summa Cum Laude for CGPA 3.90 or...",
+        "b_short": "Degree honors distinctions correspond to CGPA thresholds:...",
+        "sim": 0.894965
+      },
+      {
+        "id": "p13",
+        "a_short": "Campus transfer requests are only considered upon the dea...",
+        "b_short": "Moving from one FAST-NUCES campus to another is restricte...",
+        "sim": 0.848564
+      },
+      {
+        "id": "p14",
+        "a_short": "Tuition financial aid loans stop if CGPA drops under 2.00...",
+        "b_short": "Study loans covering tuition are revoked below 2.00 UG or...",
+        "sim": 0.847972
+      },
+      {
+        "id": "p15",
+        "a_short": "Food, drinks, tobacco, mobile phones, and unauthorized so...",
+        "b_short": "Students in computer labs may not bring food or beverages...",
+        "sim": 0.88359
+      }
+    ]
+  },
+  "unrelated": {
+    "mean": 0.451903,
+    "pairs": [
+      {
+        "id": "u01",
+        "a_short": "Students are not allowed to wear shorts, sleeveless shirt...",
+        "b_short": "Tuition fee refunds follow HEC timelines: 100% up to the ...",
+        "sim": 0.455241
+      },
+      {
+        "id": "u02",
+        "a_short": "Grades CR (Continuing Research), I (Incomplete), and W (W...",
+        "b_short": "The Chiniot-Faisalabad campus spans 30 acres along Faisal...",
+        "sim": 0.405408
+      },
+      {
+        "id": "u03",
+        "a_short": "Payment via Kuickpay charges Rs. 60 per transaction using...",
+        "b_short": "The Agha Hasan Abedi Gold Medal is awarded for first posi...",
+        "sim": 0.459516
+      },
+      {
+        "id": "u04",
+        "a_short": "The Office of Research, Innovation and Commercialization ...",
+        "b_short": "No drinks or foodstuff are allowed inside computing labor...",
+        "sim": 0.479579
+      },
+      {
+        "id": "u05",
+        "a_short": "The maximum duration allowed for a PhD program under HEC ...",
+        "b_short": "Students must carry their NU ID card inside the library a...",
+        "sim": 0.420405
+      },
+      {
+        "id": "u06",
+        "a_short": "In 2019-20, Lahore campus graduated 672 undergraduate stu...",
+        "b_short": "Use of generative AI tools for spell checking or initial ...",
+        "sim": 0.35079
+      },
+      {
+        "id": "u07",
+        "a_short": "Students on second academic warning must not register for...",
+        "b_short": "The Islamabad campus hosted AI-Nexus and open-house compe...",
+        "sim": 0.444126
+      },
+      {
+        "id": "u08",
+        "a_short": "Inter-library loan requests submitted by email are proces...",
+        "b_short": "Pre-medical students transferring from other universities...",
+        "sim": 0.483706
+      },
+      {
+        "id": "u09",
+        "a_short": "The Employees Health Insurance Scheme covers faculty memb...",
+        "b_short": "Retake sessional exam fee is Rs. 2,000 per course and pap...",
+        "sim": 0.39497
+      },
+      {
+        "id": "u10",
+        "a_short": "An application to recheck a final exam must reach the Exa...",
+        "b_short": "Foundation for Advancement of Science and Technology (FAS...",
+        "sim": 0.44382
+      },
+      {
+        "id": "u11",
+        "a_short": "The medium of instruction and examination is English for ...",
+        "b_short": "During summer semester, a minimum of ten students must re...",
+        "sim": 0.536857
+      },
+      {
+        "id": "u12",
+        "a_short": "Students earning an SGPA of 4.00 with regular course load...",
+        "b_short": "All five campus libraries are accessible via the Insignia...",
+        "sim": 0.472804
+      },
+      {
+        "id": "u13",
+        "a_short": "Freezing of a semester requires paying prescribed Semeste...",
+        "b_short": "Plagiarism includes failing to use proper citations or su...",
+        "sim": 0.510616
+      },
+      {
+        "id": "u14",
+        "a_short": "A regular semester spans 16 weeks of teaching, one makeup...",
+        "b_short": "FAST Alumni of North America (FANA) and Ihsan Trust offer...",
+        "sim": 0.463557
+      },
+      {
+        "id": "u15",
+        "a_short": "Transfer of credits is disallowed for Final Year Project ...",
+        "b_short": "In 2023-24, 3,807 applicants applied across all five camp...",
+        "sim": 0.457143
+      }
+    ]
+  },
+  "gap": 0.391443,
+  "embed_ms": {
+    "mean": 3645.26,
+    "p50": 3488.826,
+    "p95": 4443.267,
+    "n": 50
+  },
+  "determinism_max_abs_diff": 0.0,
+  "determinism_pass": true
+}
