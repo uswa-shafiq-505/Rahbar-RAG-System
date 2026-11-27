@@ -1,0 +1,618 @@
+{
+  "ts": "2026-11-27T13:56:42Z",
+  "embed_model": "nomic-embed-text",
+  "n_live": 44,
+  "n_golden": 20,
+  "threshold": 0.75,
+  "overall_coverage": 0.1136,
+  "in_domain_coverage": 0.1429,
+  "out_domain_coverage": 0.0625,
+  "uncovered": [
+    {
+      "id": "q01",
+      "query": "What is the exact minimum attendance percentage required for the 2026 academic rules?",
+      "best_sim": 0.676875,
+      "suggested_topic": "attendance"
+    },
+    {
+      "id": "q02",
+      "query": "What happens if my attendance drops below the minimum in a course?",
+      "best_sim": 0.6387,
+      "suggested_topic": "attendance"
+    },
+    {
+      "id": "q03",
+      "query": "Can the head of department excuse missed lectures for medical reasons?",
+      "best_sim": 0.520121,
+      "suggested_topic": "attendance"
+    },
+    {
+      "id": "q04",
+      "query": "Which clause of the academic rules covers attendance?",
+      "best_sim": 0.635129,
+      "suggested_topic": "attendance"
+    },
+    {
+      "id": "q06",
+      "query": "How many semesters can I stay on academic warning before being dropped?",
+      "best_sim": 0.719489,
+      "suggested_topic": "cgpa_warning"
+    },
+    {
+      "id": "q08",
+      "query": "If I repeat a course I failed, does the new grade replace the old one?",
+      "best_sim": 0.480665,
+      "suggested_topic": "repeat_course"
+    },
+    {
+      "id": "q09",
+      "query": "Can I retake a course just to improve my CGPA?",
+      "best_sim": 0.591008,
+      "suggested_topic": "repeat_course"
+    },
+    {
+      "id": "q10",
+      "query": "Is there a cap on the grade I can get when repeating a course?",
+      "best_sim": 0.639074,
+      "suggested_topic": "repeat_course"
+    },
+    {
+      "id": "q12",
+      "query": "If I drop a course during the semester, what is the policy for getting a refund?",
+      "best_sim": 0.665639,
+      "suggested_topic": "fees"
+    },
+    {
+      "id": "q13",
+      "query": "Which miscellaneous fees do I pay each semester?",
+      "best_sim": 0.664731,
+      "suggested_topic": "fees"
+    },
+    {
+      "id": "q14",
+      "query": "Is the tuition fee different for MS students?",
+      "best_sim": 0.626095,
+      "suggested_topic": "fees"
+    },
+    {
+      "id": "q15",
+      "query": "How many grade points is an A minus worth?",
+      "best_sim": 0.589467,
+      "suggested_topic": "grading"
+    },
+    {
+      "id": "q16",
+      "query": "What grade does a student receive for failing the attendance requirement?",
+      "best_sim": 0.64255,
+      "suggested_topic": "grading"
+    },
+    {
+      "id": "q17",
+      "query": "How is the semester GPA calculated?",
+      "best_sim": 0.606945,
+      "suggested_topic": "grading"
+    },
+    {
+      "id": "q18",
+      "query": "What are the university rules regarding using tools like ChatGPT for coursework?",
+      "best_sim": 0.573373,
+      "suggested_topic": "genai_policy"
+    },
+    {
+      "id": "q19",
+      "query": "What must I disclose when I use an AI tool for coursework?",
+      "best_sim": 0.563858,
+      "suggested_topic": "genai_policy"
+    },
+    {
+      "id": "q20",
+      "query": "What is the penalty for submitting AI generated work as my own?",
+      "best_sim": 0.494795,
+      "suggested_topic": "genai_policy"
+    },
+    {
+      "id": "q21",
+      "query": "Can you compare the differences in the attendance clause between the 2023 and 2026 rules?",
+      "best_sim": 0.619394,
+      "suggested_topic": "rule_versions"
+    },
+    {
+      "id": "q22",
+      "query": "Which academic rules apply to students admitted before 2026?",
+      "best_sim": 0.714295,
+      "suggested_topic": "rule_versions"
+    },
+    {
+      "id": "q23",
+      "query": "Is the attendance clause numbered the same in the prospectus and the handbook?",
+      "best_sim": 0.556277,
+      "suggested_topic": "rule_versions"
+    },
+    {
+      "id": "q24",
+      "query": "Can I register for a course after failing its prerequisite?",
+      "best_sim": 0.584465,
+      "suggested_topic": "course_registration"
+    },
+    {
+      "id": "q26",
+      "query": "Until when can I drop a course without a grade penalty?",
+      "best_sim": 0.623606,
+      "suggested_topic": "course_registration"
+    },
+    {
+      "id": "q27",
+      "query": "What happens if I miss a mid-term exam?",
+      "best_sim": 0.548783,
+      "suggested_topic": "examinations"
+    },
+    {
+      "id": "q28",
+      "query": "How do I apply for re-evaluation of my final paper?",
+      "best_sim": 0.514429,
+      "suggested_topic": "examinations"
+    },
+    {
+      "id": "q29",
+      "query": "What are the hostel rules for visitors?",
+      "best_sim": 0.687499,
+      "suggested_topic": "transport_hostel"
+    },
+    {
+      "id": "q30",
+      "query": "How much does a hostel room cost per semester?",
+      "best_sim": 0.73583,
+      "suggested_topic": "transport_hostel"
+    },
+    {
+      "id": "q31",
+      "query": "Does the university run a bus service from Rawalpindi?",
+      "best_sim": 0.564132,
+      "suggested_topic": "transport_hostel"
+    },
+    {
+      "id": "q32",
+      "query": "What are the bus timings for the morning shift?",
+      "best_sim": 0.625874,
+      "suggested_topic": "transport_hostel"
+    },
+    {
+      "id": "q33",
+      "query": "How many faculty members with a PhD does the Islamabad campus have?",
+      "best_sim": 0.600429,
+      "suggested_topic": "annual_report"
+    },
+    {
+      "id": "q34",
+      "query": "How many students graduated in the last annual report year?",
+      "best_sim": 0.741054,
+      "suggested_topic": "annual_report"
+    },
+    {
+      "id": "q35",
+      "query": "How many research publications did the university report in 2023?",
+      "best_sim": 0.695677,
+      "suggested_topic": "annual_report"
+    },
+    {
+      "id": "q36",
+      "query": "Which scholarships are available for undergraduate students?",
+      "best_sim": 0.638539,
+      "suggested_topic": "scholarships"
+    },
+    {
+      "id": "q38",
+      "query": "How do I apply for financial aid?",
+      "best_sim": 0.621836,
+      "suggested_topic": "scholarships"
+    },
+    {
+      "id": "q39",
+      "query": "When do the Fall 2026 final exams start?",
+      "best_sim": 0.600087,
+      "suggested_topic": "calendar"
+    },
+    {
+      "id": "q40",
+      "query": "Which days are public holidays in the 2026-27 academic calendar?",
+      "best_sim": 0.621676,
+      "suggested_topic": "calendar"
+    },
+    {
+      "id": "q41",
+      "query": "How many programme learning outcomes does Electrical Engineering have since 2024?",
+      "best_sim": 0.627778,
+      "suggested_topic": "program_outcomes"
+    },
+    {
+      "id": "q42",
+      "query": "Which learning outcome was removed from the Electrical Engineering programme in 2024?",
+      "best_sim": 0.567889,
+      "suggested_topic": "program_outcomes"
+    },
+    {
+      "id": "q43",
+      "query": "Can faculty members hold equity in a start-up that uses university labs?",
+      "best_sim": 0.585915,
+      "suggested_topic": "entrepreneurship"
+    },
+    {
+      "id": "q44",
+      "query": "Who approves a faculty start-up under the entrepreneurship policy?",
+      "best_sim": 0.609965,
+      "suggested_topic": "entrepreneurship"
+    }
+  ],
+  "uncovered_topics": [
+    {
+      "topic": "attendance",
+      "count": 4
+    },
+    {
+      "topic": "transport_hostel",
+      "count": 4
+    },
+    {
+      "topic": "annual_report",
+      "count": 3
+    },
+    {
+      "topic": "fees",
+      "count": 3
+    },
+    {
+      "topic": "genai_policy",
+      "count": 3
+    },
+    {
+      "topic": "grading",
+      "count": 3
+    },
+    {
+      "topic": "repeat_course",
+      "count": 3
+    },
+    {
+      "topic": "rule_versions",
+      "count": 3
+    },
+    {
+      "topic": "calendar",
+      "count": 2
+    },
+    {
+      "topic": "course_registration",
+      "count": 2
+    },
+    {
+      "topic": "entrepreneurship",
+      "count": 2
+    },
+    {
+      "topic": "examinations",
+      "count": 2
+    },
+    {
+      "topic": "program_outcomes",
+      "count": 2
+    },
+    {
+      "topic": "scholarships",
+      "count": 2
+    },
+    {
+      "topic": "cgpa_warning",
+      "count": 1
+    }
+  ],
+  "per_live_query": [
+    {
+      "id": "q01",
+      "query": "What is the exact minimum attendance percentage required for the 2026 academic rules?",
+      "best_match_golden_id": "q005",
+      "best_sim": 0.676875,
+      "covered": false
+    },
+    {
+      "id": "q02",
+      "query": "What happens if my attendance drops below the minimum in a course?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.6387,
+      "covered": false
+    },
+    {
+      "id": "q03",
+      "query": "Can the head of department excuse missed lectures for medical reasons?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.520121,
+      "covered": false
+    },
+    {
+      "id": "q04",
+      "query": "Which clause of the academic rules covers attendance?",
+      "best_match_golden_id": "q020",
+      "best_sim": 0.635129,
+      "covered": false
+    },
+    {
+      "id": "q05",
+      "query": "At what CGPA does a student go on academic warning?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.865611,
+      "covered": true
+    },
+    {
+      "id": "q06",
+      "query": "How many semesters can I stay on academic warning before being dropped?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.719489,
+      "covered": false
+    },
+    {
+      "id": "q07",
+      "query": "What is the minimum CGPA to graduate from the BS programme?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.775885,
+      "covered": true
+    },
+    {
+      "id": "q08",
+      "query": "If I repeat a course I failed, does the new grade replace the old one?",
+      "best_match_golden_id": "q001",
+      "best_sim": 0.480665,
+      "covered": false
+    },
+    {
+      "id": "q09",
+      "query": "Can I retake a course just to improve my CGPA?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.591008,
+      "covered": false
+    },
+    {
+      "id": "q10",
+      "query": "Is there a cap on the grade I can get when repeating a course?",
+      "best_match_golden_id": "q001",
+      "best_sim": 0.639074,
+      "covered": false
+    },
+    {
+      "id": "q11",
+      "query": "What is the cost per credit hour for undergraduate tuition in the 2026 fee structure?",
+      "best_match_golden_id": "q010",
+      "best_sim": 0.83099,
+      "covered": true
+    },
+    {
+      "id": "q12",
+      "query": "If I drop a course during the semester, what is the policy for getting a refund?",
+      "best_match_golden_id": "q009",
+      "best_sim": 0.665639,
+      "covered": false
+    },
+    {
+      "id": "q13",
+      "query": "Which miscellaneous fees do I pay each semester?",
+      "best_match_golden_id": "q010",
+      "best_sim": 0.664731,
+      "covered": false
+    },
+    {
+      "id": "q14",
+      "query": "Is the tuition fee different for MS students?",
+      "best_match_golden_id": "q010",
+      "best_sim": 0.626095,
+      "covered": false
+    },
+    {
+      "id": "q15",
+      "query": "How many grade points is an A minus worth?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.589467,
+      "covered": false
+    },
+    {
+      "id": "q16",
+      "query": "What grade does a student receive for failing the attendance requirement?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.64255,
+      "covered": false
+    },
+    {
+      "id": "q17",
+      "query": "How is the semester GPA calculated?",
+      "best_match_golden_id": "q011",
+      "best_sim": 0.606945,
+      "covered": false
+    },
+    {
+      "id": "q18",
+      "query": "What are the university rules regarding using tools like ChatGPT for coursework?",
+      "best_match_golden_id": "q008",
+      "best_sim": 0.573373,
+      "covered": false
+    },
+    {
+      "id": "q19",
+      "query": "What must I disclose when I use an AI tool for coursework?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.563858,
+      "covered": false
+    },
+    {
+      "id": "q20",
+      "query": "What is the penalty for submitting AI generated work as my own?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.494795,
+      "covered": false
+    },
+    {
+      "id": "q21",
+      "query": "Can you compare the differences in the attendance clause between the 2023 and 2026 rules?",
+      "best_match_golden_id": "q010",
+      "best_sim": 0.619394,
+      "covered": false
+    },
+    {
+      "id": "q22",
+      "query": "Which academic rules apply to students admitted before 2026?",
+      "best_match_golden_id": "q005",
+      "best_sim": 0.714295,
+      "covered": false
+    },
+    {
+      "id": "q23",
+      "query": "Is the attendance clause numbered the same in the prospectus and the handbook?",
+      "best_match_golden_id": "q018",
+      "best_sim": 0.556277,
+      "covered": false
+    },
+    {
+      "id": "q24",
+      "query": "Can I register for a course after failing its prerequisite?",
+      "best_match_golden_id": "q002",
+      "best_sim": 0.584465,
+      "covered": false
+    },
+    {
+      "id": "q25",
+      "query": "What is the maximum number of credit hours I can register in a semester?",
+      "best_match_golden_id": "q001",
+      "best_sim": 0.793766,
+      "covered": true
+    },
+    {
+      "id": "q26",
+      "query": "Until when can I drop a course without a grade penalty?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.623606,
+      "covered": false
+    },
+    {
+      "id": "q27",
+      "query": "What happens if I miss a mid-term exam?",
+      "best_match_golden_id": "q002",
+      "best_sim": 0.548783,
+      "covered": false
+    },
+    {
+      "id": "q28",
+      "query": "How do I apply for re-evaluation of my final paper?",
+      "best_match_golden_id": "q011",
+      "best_sim": 0.514429,
+      "covered": false
+    },
+    {
+      "id": "q29",
+      "query": "What are the hostel rules for visitors?",
+      "best_match_golden_id": "q017",
+      "best_sim": 0.687499,
+      "covered": false
+    },
+    {
+      "id": "q30",
+      "query": "How much does a hostel room cost per semester?",
+      "best_match_golden_id": "q017",
+      "best_sim": 0.73583,
+      "covered": false
+    },
+    {
+      "id": "q31",
+      "query": "Does the university run a bus service from Rawalpindi?",
+      "best_match_golden_id": "q018",
+      "best_sim": 0.564132,
+      "covered": false
+    },
+    {
+      "id": "q32",
+      "query": "What are the bus timings for the morning shift?",
+      "best_match_golden_id": "q016",
+      "best_sim": 0.625874,
+      "covered": false
+    },
+    {
+      "id": "q33",
+      "query": "How many faculty members with a PhD does the Islamabad campus have?",
+      "best_match_golden_id": "q014",
+      "best_sim": 0.600429,
+      "covered": false
+    },
+    {
+      "id": "q34",
+      "query": "How many students graduated in the last annual report year?",
+      "best_match_golden_id": "q013",
+      "best_sim": 0.741054,
+      "covered": false
+    },
+    {
+      "id": "q35",
+      "query": "How many research publications did the university report in 2023?",
+      "best_match_golden_id": "q015",
+      "best_sim": 0.695677,
+      "covered": false
+    },
+    {
+      "id": "q36",
+      "query": "Which scholarships are available for undergraduate students?",
+      "best_match_golden_id": "q003",
+      "best_sim": 0.638539,
+      "covered": false
+    },
+    {
+      "id": "q37",
+      "query": "What is the minimum CGPA to keep a need-based scholarship?",
+      "best_match_golden_id": "q012",
+      "best_sim": 0.755517,
+      "covered": true
+    },
+    {
+      "id": "q38",
+      "query": "How do I apply for financial aid?",
+      "best_match_golden_id": "q006",
+      "best_sim": 0.621836,
+      "covered": false
+    },
+    {
+      "id": "q39",
+      "query": "When do the Fall 2026 final exams start?",
+      "best_match_golden_id": "q005",
+      "best_sim": 0.600087,
+      "covered": false
+    },
+    {
+      "id": "q40",
+      "query": "Which days are public holidays in the 2026-27 academic calendar?",
+      "best_match_golden_id": "q005",
+      "best_sim": 0.621676,
+      "covered": false
+    },
+    {
+      "id": "q41",
+      "query": "How many programme learning outcomes does Electrical Engineering have since 2024?",
+      "best_match_golden_id": "q015",
+      "best_sim": 0.627778,
+      "covered": false
+    },
+    {
+      "id": "q42",
+      "query": "Which learning outcome was removed from the Electrical Engineering programme in 2024?",
+      "best_match_golden_id": "q013",
+      "best_sim": 0.567889,
+      "covered": false
+    },
+    {
+      "id": "q43",
+      "query": "Can faculty members hold equity in a start-up that uses university labs?",
+      "best_match_golden_id": "q014",
+      "best_sim": 0.585915,
+      "covered": false
+    },
+    {
+      "id": "q44",
+      "query": "Who approves a faculty start-up under the entrepreneurship policy?",
+      "best_match_golden_id": "q014",
+      "best_sim": 0.609965,
+      "covered": false
+    }
+  ]
+}
