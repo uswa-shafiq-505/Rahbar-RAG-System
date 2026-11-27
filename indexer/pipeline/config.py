@@ -20,6 +20,7 @@ class IndexerSettings:
     verify_near_dup_threshold: float = 0.95
     quarantine_dir: str = "/data/quarantine"
     lake_dir: str = "/data/lake"
+    verify_report_path: str = "/data/results"
 
 
 def get_settings() -> IndexerSettings:
@@ -36,4 +37,5 @@ def get_settings() -> IndexerSettings:
         verify_near_dup_threshold=float(os.environ.get("VERIFY_NEAR_DUP_THRESHOLD", 0.95)),
         quarantine_dir=os.environ.get("QUARANTINE_DIR", "/data/quarantine"),
         lake_dir=os.environ.get("LAKE_DIR", "/data/lake"),
+        verify_report_path=os.environ.get("VERIFY_REPORT_PATH", "/data/results"),
     )

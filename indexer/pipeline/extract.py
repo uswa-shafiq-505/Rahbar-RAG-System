@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
+from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import Any
 
 from pypdf import PdfReader
 
@@ -107,6 +110,59 @@ def _extract_plain(path: Path) -> list[Page]:
     return [Page(source=path.name, page=1, text=text, ocr=False)]
 
 
+def _first_title_line(text: str, fallback: str) -> str:
+    """Return the first non-empty text line (<= 200 chars), skipping leading front matter."""
+    lines = text.splitlines()
+    idx = 0
+    if lines and lines[0].strip() == "---":
+        for i in range(1, len(lines)):
+            if lines[i].strip() == "---":
+                idx = i + 1
+                break
+    for line in lines[idx:]:
+        cleaned = line.lstrip("#").strip() if line.strip().startswith("#") else line.strip()
+        if cleaned:
+            return cleaned[:200]
+    return fallback[:200]
+
+
+def _extract_metadata(path: Path) -> dict[str, Any]:
+    """Compute content_hash, title, doc_version, and page_count for A1 verification."""
+    content_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+
+    m = re.search(r"(\d{4})[-_](\d{2})", path.name)
+    if m:
+        doc_version = f"{m.group(1)}-{m.group(2)}"
+    else:
+        doc_version = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).strftime("%Y-%m")
+
+    suffix = path.suffix.lower()
+    page_count = 1
+    first_text = ""
+    if suffix == ".pdf":
+        reader = PdfReader(str(path))
+        page_count = len(reader.pages)
+        for pg in reader.pages:
+            txt = (pg.extract_text() or "").strip()
+            if txt:
+                first_text = txt
+                break
+    elif suffix in {".html", ".htm"}:
+        parser = _HTMLTextParser()
+        parser.feed(path.read_text(encoding="utf-8", errors="replace"))
+        first_text = parser.text()
+    else:
+        first_text = path.read_text(encoding="utf-8", errors="replace")
+
+    title = _first_title_line(first_text, path.stem)
+    return {
+        "content_hash": content_hash,
+        "title": title,
+        "doc_version": doc_version,
+        "page_count": page_count,
+    }
+
+
 def extract(path: str, doc_version: str, superseded: bool) -> Document:
     """Return the document's text page by page.
 
@@ -126,5 +182,23 @@ def extract(path: str, doc_version: str, superseded: bool) -> Document:
     else:
         raise ValueError(f"extract: unsupported file type {suffix!r} for {path}")
 
-    return Document(source=p.name, doc_version=doc_version, superseded=superseded, pages=pages)
+    meta = _extract_metadata(p)
+    resolved_version = (
+        doc_version if (doc_version and doc_version != "unknown") else str(meta["doc_version"])
+    )
+    title = str(meta["title"])
+    if title == p.stem and pages:
+        combined = "\n".join(pg.text for pg in pages if pg.text.strip())
+        if combined:
+            title = _first_title_line(combined, p.stem)
+
+    return Document(
+        source=p.name,
+        doc_version=resolved_version,
+        superseded=superseded,
+        pages=pages,
+        content_hash=str(meta["content_hash"]),
+        title=title,
+        page_count=int(meta["page_count"]),
+    )
     
