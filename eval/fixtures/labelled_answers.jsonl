@@ -1,0 +1,8 @@
+{"question_id": "q001", "human_faithful": true, "human_reason": "Clearly faithful: cites 50% credit transfer cap and minimum C (2.00 GPA) directly from Academic Rules Handbook clause 3.7 and 3.10 on p.15."}
+{"question_id": "q004", "human_faithful": true, "human_reason": "Clearly faithful: lists all three campus transfer grounds verbatim from Prospectus 2026 Clause 20 on p.3."}
+{"question_id": "q006", "human_faithful": true, "human_reason": "Clearly faithful: cites 2.00 UG / 2.5 grad CGPA cutoffs and 3-month / 4-year repayment rules from Student Handbook Section II p.18."}
+{"question_id": "q012", "human_faithful": true, "human_reason": "Clearly faithful: cites exact 2.0/2.5/3.0 CGPA warning thresholds and 3-warning dismissal rule from grading-page.html."}
+{"question_id": "q002", "human_faithful": false, "human_reason": "Clearly unfaithful: sample 3B response claimed students can freeze up to 4 semesters and omitted the first-two-semester BS restriction from Clause 4.18."}
+{"question_id": "q009", "human_faithful": false, "human_reason": "Clearly unfaithful: sample 3B response invented a 90% day-12 refund tier not present in the Fee Refund Policy table."}
+{"question_id": "q011", "human_faithful": true, "human_reason": "Borderline faithful: accurately states CR, I, W, S, and U are excluded from GPA calculations, though it omits that an unresolved I grade converts to F before the end of next semester."}
+{"question_id": "q017", "human_faithful": false, "human_reason": "Borderline unfaithful: retrieved Annual Report mentions Chiniot-Faisalabad hostel existence, and model guessed a hostel fee range instead of abstaining."}
