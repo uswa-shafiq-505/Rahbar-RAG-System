@@ -16,6 +16,10 @@ class IndexerSettings:
     chunk_size: int
     chunk_overlap: int
     ollama_url: str
+    verify_enabled: bool = True
+    verify_near_dup_threshold: float = 0.95
+    quarantine_dir: str = "/data/quarantine"
+    lake_dir: str = "/data/lake"
 
 
 def get_settings() -> IndexerSettings:
@@ -28,4 +32,8 @@ def get_settings() -> IndexerSettings:
         chunk_size=int(os.environ.get("CHUNK_SIZE", 400)),
         chunk_overlap=int(os.environ.get("CHUNK_OVERLAP", 50)),
         ollama_url=os.environ.get("OLLAMA_URL", "http://host.minikube.internal:11434"),
+        verify_enabled=os.environ.get("VERIFY_ENABLED", "true").lower() in {"1", "true", "yes"},
+        verify_near_dup_threshold=float(os.environ.get("VERIFY_NEAR_DUP_THRESHOLD", 0.95)),
+        quarantine_dir=os.environ.get("QUARANTINE_DIR", "/data/quarantine"),
+        lake_dir=os.environ.get("LAKE_DIR", "/data/lake"),
     )

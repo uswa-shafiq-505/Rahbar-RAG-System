@@ -1,0 +1,97 @@
+# Embedding evaluation pairs for Assignment 03 Part B2 (eval/module_embedding.py).
+# Drawn from actual topics in corpus/raw/ (academic rules, prospectus, fees, grading, student handbook, annual reports).
+
+paraphrase:
+  - id: p01
+    a: "Students must maintain 100% attendance, though up to 20% absence may be condoned by the HoD for genuine illness, requiring 80% minimum attendance for undergraduate courses."
+    b: "An undergraduate must attend at least 80% of lectures and labs to qualify for the final exam, as the Head of Department can condone at most 20% of missed classes for valid reasons."
+  - id: p02
+    a: "If an undergraduate student's CGPA drops below 2.00 at the end of any semester, an academic warning is issued and the warning count increases by one."
+    b: "Undergraduate degree candidates receive academic probation when their cumulative grade point average falls under 2.00 after a semester."
+  - id: p03
+    a: "When the warning count reaches three consecutive warnings below the required CGPA, the student's admission at FAST-NUCES is automatically closed."
+    b: "Accumulating three academic warnings in a row leads to automatic termination of a student's university enrollment."
+  - id: p04
+    a: "Credit exemption for courses completed at another accredited university cannot exceed 50% of the degree program's total credit hours, and grades below C are ineligible."
+    b: "Transfer students from other universities may receive credit exemptions for at most half of their degree credits, provided each transferred course earned a grade of C (GPA 2.00) or higher."
+  - id: p05
+    a: "Students may freeze their semester for up to two semesters, though freezing the first two BS semesters is disallowed except in extreme hardship cases approved by the Competent Authority."
+    b: "Admission can be frozen for at most two semesters upon paying freeze charges, while BS students in their opening two semesters cannot freeze unless granted a hardship exemption."
+  - id: p06
+    a: "When a course is repeated, only the grade points earned in the most recent attempt count toward CGPA calculation, even if lower than earlier attempts."
+    b: "For repeated courses, CGPA uses solely the latest grade achieved rather than the highest or average grade from previous registrations."
+  - id: p07
+    a: "A student must register for both the theory and lab components of a course together and cannot withdraw from only one of them."
+    b: "Theory and associated lab sections require simultaneous enrollment, and dropping or withdrawing from one without the other is not permitted."
+  - id: p08
+    a: "To register for Final Year Project I (FYP-I), a student must have passed all courses listed in the first six semesters of the degree study plan."
+    b: "Enrollment in FYP-I requires clearing every course prescribed across semesters one through six of the program curriculum."
+  - id: p09
+    a: "At admission, students pay a one-time non-refundable Admission Fee of Rs. 30,000 alongside a refundable Security Deposit of Rs. 20,000."
+    b: "New entrants must submit Rs. 30,000 for non-refundable admission charges and Rs. 20,000 as a refundable caution deposit upon joining."
+  - id: p10
+    a: "Under HEC tuition refund rules, 100% is refunded up to day 10 of classes, 80% up to day 15, 60% up to day 20, 50% up to day 30, and nothing from day 31 onward."
+    b: "Tuition fee refunds scale down after classes start: full refund within 10 days, 80% through day 15, 60% through day 20, 50% through the 30th day, and zero thereafter."
+  - id: p11
+    a: "An Incomplete (I) grade is temporary and converts automatically to an F grade before the end of the next semester if not resolved."
+    b: "Failure to clear an I grade prior to the close of the following semester causes it to become a failing F grade automatically."
+  - id: p12
+    a: "Graduating students earn Summa Cum Laude for CGPA 3.90 or above, Magna Cum Laude for 3.75 to 3.89, and Cum Laude for 3.60 to 3.74."
+    b: "Degree honors distinctions correspond to CGPA thresholds: 3.90–4.00 for Summa Cum Laude, 3.75–3.89 for Magna Cum Laude, and 3.60–3.74 for Cum Laude."
+  - id: p13
+    a: "Campus transfer requests are only considered upon the death of a parent, a parent's job posting to the target city, or the marriage of a female student."
+    b: "Moving from one FAST-NUCES campus to another is restricted to three grounds: parental demise, parent transfer to that city, or a female student's marriage."
+  - id: p14
+    a: "Tuition financial aid loans stop if CGPA drops under 2.00 for undergraduates or 2.5 for graduates, with repayment beginning three months after graduation or employment."
+    b: "Study loans covering tuition are revoked below 2.00 UG or 2.5 graduate CGPA and must be repaid within four years, starting three months after finishing studies or getting a job."
+  - id: p15
+    a: "Food, drinks, tobacco, mobile phones, and unauthorized software installation are strictly prohibited inside university computing laboratories."
+    b: "Students in computer labs may not bring food or beverages, smoke, use phones or tablets, or install unapproved software on lab machines."
+
+unrelated:
+  - id: u01
+    a: "Students are not allowed to wear shorts, sleeveless shirts, or tight and see-through clothing on campus under the Dress Code."
+    b: "Tuition fee refunds follow HEC timelines: 100% up to the 10th day of classes and 50% up to the 30th day."
+  - id: u02
+    a: "Grades CR (Continuing Research), I (Incomplete), and W (Withdrawn) are excluded from computing SGPA and CGPA."
+    b: "The Chiniot-Faisalabad campus spans 30 acres along Faisalabad Sargodha Road roughly 9 km from the M4 interchange."
+  - id: u03
+    a: "Payment via Kuickpay charges Rs. 60 per transaction using voucher number 0117032614082405 through partner banks."
+    b: "The Agha Hasan Abedi Gold Medal is awarded for first position upon graduation with a minimum CGPA of 3.00."
+  - id: u04
+    a: "The Office of Research, Innovation and Commercialization (ORIC) promotes research collaboration between faculty and industry."
+    b: "No drinks or foodstuff are allowed inside computing laboratories, and students must log out when finished."
+  - id: u05
+    a: "The maximum duration allowed for a PhD program under HEC guidelines is eight years, whereas MBA is three years."
+    b: "Students must carry their NU ID card inside the library and observe strict silence in study areas."
+  - id: u06
+    a: "In 2019-20, Lahore campus graduated 672 undergraduate students out of a university-wide total of 1,896."
+    b: "Use of generative AI tools for spell checking or initial search does not require citation unless specified in an assignment brief."
+  - id: u07
+    a: "Students on second academic warning must not register for any new course unless recommended by HoD and approved by Controller of Examinations."
+    b: "The Islamabad campus hosted AI-Nexus and open-house competitions with prize pools for student teams."
+  - id: u08
+    a: "Inter-library loan requests submitted by email are processed within 24 hours across five campus libraries and PASTIC."
+    b: "Pre-medical students transferring from other universities must submit proof of having passed an additional mathematics course."
+  - id: u09
+    a: "The Employees Health Insurance Scheme covers faculty members, officers, and administrative staff and their families."
+    b: "Retake sessional exam fee is Rs. 2,000 per course and paper rechecking fee is Rs. 500 per course or lab."
+  - id: u10
+    a: "An application to recheck a final exam must reach the Examination Office within seven days of result announcement."
+    b: "Foundation for Advancement of Science and Technology (FAST) was established in 1980 as a charitable institution."
+  - id: u11
+    a: "The medium of instruction and examination is English for all courses except language courses and Islamic Studies."
+    b: "During summer semester, a minimum of ten students must register for a course or the course will be dropped."
+  - id: u12
+    a: "Students earning an SGPA of 4.00 with regular course load are placed on the Rector's List of Honors."
+    b: "All five campus libraries are accessible via the Insignia ILS Online Public Access Catalogue app."
+  - id: u13
+    a: "Freezing of a semester requires paying prescribed Semester Freeze charges, and late registration incurs Rs. 5,000."
+    b: "Plagiarism includes failing to use proper citations or submitting work completed by another individual or organization."
+  - id: u14
+    a: "A regular semester spans 16 weeks of teaching, one makeup week, and two weeks of final examinations."
+    b: "FAST Alumni of North America (FANA) and Ihsan Trust offer financial assistance scholarships to needy students."
+  - id: u15
+    a: "Transfer of credits is disallowed for Final Year Project (FYP) courses and MS Thesis credits."
+    b: "In 2023-24, 3,807 applicants applied across all five campuses with 2,525 applying to BS Computer Science."
+
