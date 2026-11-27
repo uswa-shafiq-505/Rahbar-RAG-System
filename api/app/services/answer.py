@@ -19,6 +19,7 @@ from ..retrieval import get_retriever
 from ..retrieval.base import Retriever
 from ..schemas import Answer, AskResponse, Citation, Passage, RetrievedRef
 from . import trace_sink
+from .guardrails import check_retrieved_chunks
 
 log = logging.getLogger("rahbar.answer")
 
@@ -131,6 +132,7 @@ def build_trace_record(
     latency_ms: dict[str, float] | None = None,
     cache: str = "miss",
     abstained: bool = False,
+    guardrail_actions: list[dict[str, Any]] | None = None,
     stage: str | None = None,
     error: str | None = None,
 ) -> dict[str, Any]:
@@ -172,7 +174,7 @@ def build_trace_record(
             {"source": c.source, "section": c.section, "page": c.page}
             for c in (citations or [])
         ],
-        "guardrail_actions": [],
+        "guardrail_actions": guardrail_actions if guardrail_actions is not None else [],
         "latency_ms": {k: round(float(v), 2) for k, v in lat.items()},
         "cache": cache,
         "abstained": abstained,
@@ -251,6 +253,7 @@ def answer_question(
     raw_passages: list[Passage] = []
     prompt_passages: list[Passage] = []
     prompt: str | None = None
+    guardrail_actions: list[dict[str, Any]] = []
     filters_applied = _filters_for_retriever(question, retriever)
 
     def _latency_dict() -> dict[str, float]:
@@ -329,13 +332,19 @@ def answer_question(
         raw_passages = retriever.retrieve(question, settings.top_k)
         retrieve_ms = (time.perf_counter() - t_ret) * 1000.0
 
-        # 3. Relevance floor + rerank ordering
+        # 3. Relevance floor + retrieval guardrails + rerank ordering
         t_rerank = time.perf_counter()
         floor = getattr(settings, "relevance_floor", 0.30)
         filtered_passages = [p for p in raw_passages if p.score >= floor]
+        guardrail_actions, filtered_passages = check_retrieved_chunks(filtered_passages)
         prompt_passages = filtered_passages[:3]
         rerank_ms = (time.perf_counter() - t_rerank) * 1000.0
-        log.info("relevance filter: retrieved=%d filtered=%d", len(raw_passages), len(filtered_passages))
+        log.info(
+            "relevance filter: retrieved=%d filtered=%d guardrail_flagged=%d",
+            len(raw_passages),
+            len(filtered_passages),
+            len(guardrail_actions),
+        )
 
         if not filtered_passages:
             log.info("abstained=True cached_write=False")
@@ -365,6 +374,7 @@ def answer_question(
                     latency_ms=_latency_dict(),
                     cache="miss",
                     abstained=True,
+                    guardrail_actions=guardrail_actions,
                 ),
                 settings,
             )
@@ -408,6 +418,7 @@ def answer_question(
                     latency_ms=_latency_dict(),
                     cache="miss",
                     abstained=True,
+                    guardrail_actions=guardrail_actions,
                 ),
                 settings,
             )
@@ -486,6 +497,7 @@ def answer_question(
                 latency_ms=_latency_dict(),
                 cache="miss",
                 abstained=not final_response.answered_from_context,
+                guardrail_actions=guardrail_actions,
             ),
             settings,
         )
@@ -509,6 +521,7 @@ def answer_question(
                 latency_ms=_latency_dict(),
                 cache="miss",
                 abstained=True,
+                guardrail_actions=guardrail_actions,
                 stage="error",
                 error=f"{type(exc).__name__}: {exc}",
             ),
