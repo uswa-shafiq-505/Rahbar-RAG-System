@@ -1,0 +1,113 @@
+# Extra paths for Assignment 03 on top of networkpolicy.yaml (policies add up; the default
+# deny stays): the eval Job calls the live api, the candidate api and Chroma; the candidate
+# api reads Chroma. Redis stays reachable from the live api only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: api-from-eval, namespace: rahbar}
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app, operator: In, values: [api, api-candidate]}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: eval}}
+      ports:
+        - {protocol: TCP, port: 8000}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: chroma-from-eval-and-candidate, namespace: rahbar}
+spec:
+  podSelector: {matchLabels: {app: chroma}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: eval}}
+        - podSelector: {matchLabels: {app: api-candidate}}
+      ports:
+        - {protocol: TCP, port: 8000}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: eval-egress, namespace: rahbar}
+spec:
+  podSelector: {matchLabels: {app: eval}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchExpressions:
+              - {key: app, operator: In, values: [api, api-candidate, chroma]}
+      ports:
+        - {protocol: TCP, port: 8000}
+    - to:
+        - podSelector: {matchLabels: {app: ollama}}
+      ports:
+        - {protocol: TCP, port: 11434}
+    # embeddings and the faithfulness judge: Ollama on the host (11434) or a hosted API (443)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8]
+      ports:
+        - {protocol: TCP, port: 11434}
+        - {protocol: TCP, port: 443}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: api-candidate-egress, namespace: rahbar}
+spec:
+  podSelector: {matchLabels: {app: api-candidate}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app: chroma}}
+      ports:
+        - {protocol: TCP, port: 8000}
+    - to:
+        - podSelector: {matchLabels: {app: ollama}}
+      ports:
+        - {protocol: TCP, port: 11434}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8]
+      ports:
+        - {protocol: TCP, port: 11434}
+        - {protocol: TCP, port: 443}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: indexer-egress, namespace: rahbar}
+spec:
+  podSelector: {matchLabels: {app: indexer}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app: chroma}}
+      ports:
+        - {protocol: TCP, port: 8000}
+    - to:
+        - podSelector: {matchLabels: {app: ollama}}
+      ports:
+        - {protocol: TCP, port: 11434}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8]
+      ports:
+        - {protocol: TCP, port: 11434}
+        - {protocol: TCP, port: 443}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ollama-ingress, namespace: rahbar}
+spec:
+  podSelector: {matchLabels: {app: ollama}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - {protocol: TCP, port: 11434}

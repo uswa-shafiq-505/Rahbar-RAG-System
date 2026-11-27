@@ -17,12 +17,15 @@ from .embedding import embed_query
 log = logging.getLogger("rahbar.cache_layer")
 
 
-def answer_with_cache(question: str, request: Request, follow_up: bool = False) -> tuple[AskResponse, str]:
-    """Return (response, "HIT" | "MISS" | "BYPASS")."""
+def answer_with_cache(question: str, request: Request, follow_up: bool = False,
+                      bypass: bool = False) -> tuple[AskResponse, str]:
+    """Return (response, "HIT" | "MISS" | "BYPASS"). bypass=True (header X-Cache-Bypass: 1,
+    used by the evaluation suite) skips the cache entirely so cached answers cannot distort
+    latency or faithfulness measurements."""
     st = request.app.state
     cache = st.cache
     vec: list[float] | None = None
-    if cache.enabled and not follow_up:
+    if cache.enabled and not follow_up and not bypass:
         try:
             vec = embed_query(question, st.settings)
             hit, sim = cache.lookup(vec)

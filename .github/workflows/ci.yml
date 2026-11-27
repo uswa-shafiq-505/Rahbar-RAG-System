@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: "${{ env.PYTHON_VERSION }}", cache: pip}
       - run: pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt
-      - run: ruff check api indexer eval corpus
+      - run: ruff check api indexer eval corpus scripts
       - run: cd api && mypy app
       - run: cd indexer && mypy pipeline
 
@@ -40,6 +40,7 @@ jobs:
       # Stub provider, fake Chroma and fake Redis: no network, no model.
       - run: cd api && pytest -q --cov=app --cov-report=term-missing --cov-fail-under=60
       - run: cd indexer && pytest -q
+      - run: pytest scripts/tests -q
 
   manifests:
     runs-on: ubuntu-latest
@@ -52,6 +53,11 @@ jobs:
           for overlay in dev prod ci; do
             echo "== $overlay"
             kubectl kustomize k8s/overlays/$overlay | docker run --rm -i ghcr.io/yannh/kubeconform:v0.8.0 -strict -summary
+          done
+          echo "== Assignment 03 manifests (templated ones are rendered first)"
+          for f in loader-pod eval-job eval-job-candidate gate-job candidate-ingest-job candidate; do
+            COLLECTION=rahbar_candidate CHUNK_SIZE=300 CHUNK_OVERLAP=50 EMBED_MODEL=nomic-embed-text \
+              python3 scripts/render.py k8s/$f.yaml | docker run --rm -i ghcr.io/yannh/kubeconform:v0.8.0 -strict -summary
           done
   
   build:

@@ -88,3 +88,45 @@ evidence: ## capture the kubectl outputs the marker asks for into docs/evidence/
 	kubectl top pods -n $(NS) --containers > docs/evidence/kubectl-top.txt
 	kubectl get endpoints api -n $(NS) > docs/evidence/endpoints.txt
 	kubectl get hpa -n $(NS) > docs/evidence/hpa.txt
+
+# ---- Assignment 03 (RAGOps) ------------------------------------------------------------------
+COLLECTION ?= rahbar_candidate
+EMBED_MODEL ?= nomic-embed-text
+CHUNK_SIZE ?= 400
+CHUNK_OVERLAP ?= 50
+export COLLECTION EMBED_MODEL CHUNK_SIZE CHUNK_OVERLAP
+
+eval-image: ## build the evaluation image and load it into minikube
+	docker build -f eval/Dockerfile -t rahbar-eval:dev .
+	minikube image load rahbar-eval:dev
+
+load-docs: ## copy a folder into the data lake: make load-docs DIR=corpus/batch_b
+	scripts/load-docs.sh $(DIR)
+
+pull-results: ## copy results and traces from the volume into eval/results and traces
+	scripts/pull-results.sh
+
+eval-baseline: ## run the suite on the live api and the gate; promotes a passing run to baseline
+	scripts/run-job.sh k8s/eval-job.yaml eval-baseline
+
+gate-check: ## run only the gate on the newest result (after editing gate-thresholds)
+	scripts/run-job.sh k8s/gate-job.yaml gate-check 600
+
+candidate-ingest: ## build the candidate collection: make candidate-ingest COLLECTION=... CHUNK_SIZE=...
+	scripts/run-job.sh k8s/candidate-ingest-job.yaml candidate-ingest
+
+candidate-up: ## start the candidate api on its own collection
+	python3 scripts/render.py k8s/candidate.yaml | kubectl apply -f -
+	kubectl rollout status deployment/api-candidate -n $(NS) --timeout=240s
+
+eval-candidate: ## run the suite on the candidate api and the gate (non-zero exit = rejected)
+	scripts/run-job.sh k8s/eval-job-candidate.yaml eval-candidate
+
+release: ## roll the live api onto a collection (rolling update, maxUnavailable 0)
+	kubectl set env deployment/api CHROMA_COLLECTION=$(COLLECTION) EMBED_MODEL=$(EMBED_MODEL) -n $(NS)
+	kubectl annotate deployment/api kubernetes.io/change-cause="release collection $(COLLECTION), embed model $(EMBED_MODEL)" --overwrite -n $(NS)
+	kubectl rollout status deployment/api -n $(NS) --timeout=300s
+
+rollback: ## undo the last release
+	kubectl rollout undo deployment/api -n $(NS)
+	kubectl rollout status deployment/api -n $(NS) --timeout=300s

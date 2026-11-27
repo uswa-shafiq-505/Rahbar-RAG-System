@@ -12,6 +12,7 @@ router = APIRouter(prefix="/api")
 
 @router.post("/ask", response_model=AskResponse)
 def ask(body: AskRequest, request: Request, response: Response) -> AskResponse:
-    result, cache_status = answer_with_cache(body.question, request)
+    bypass = request.headers.get("x-cache-bypass", "") in {"1", "true", "yes"}
+    result, cache_status = answer_with_cache(body.question, request, bypass=bypass)
     response.headers["X-Cache"] = cache_status
     return result

@@ -19,3 +19,12 @@ def abstained() -> None:
 def fallback() -> None:
     """Member 2: call this from the validation-failure fallback path."""
     m.FALLBACKS.inc()
+
+
+def top1_similarity(score: float) -> None:
+    m.TOP1_SIMILARITY.observe(max(0.0, min(1.0, score)))
+
+
+def injection_flagged(count: int = 1) -> None:
+    """Member 2: call this whenever the injection guardrail flags a question or a chunk."""
+    m.INJECTIONS.inc(count)

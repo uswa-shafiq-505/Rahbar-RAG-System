@@ -55,6 +55,10 @@ class Settings:
     cache_threshold: float = 0.92
     cache_ttl_seconds: int = 86400
     cache_max_entries: int = 200
+    # Assignment 03 (RAGOps): where trace lines are also written (one file per pod).
+    # Empty = stdout only (local dev, tests).
+    trace_dir: str = ""
+    pod_name: str = "local"
 
 
 def get_settings() -> Settings:
@@ -79,4 +83,6 @@ def get_settings() -> Settings:
         cache_threshold=_float("CACHE_THRESHOLD", 0.92),
         cache_ttl_seconds=_int("CACHE_TTL_SECONDS", 86400),
         cache_max_entries=_int("CACHE_MAX_ENTRIES", 200),
+        trace_dir=os.environ.get("TRACE_DIR", ""),
+        pod_name=os.environ.get("POD_NAME", os.environ.get("HOSTNAME", "local")),
     )
