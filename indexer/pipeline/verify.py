@@ -55,6 +55,7 @@ class DocumentMeta(BaseModel):
     title: str | None = None
     source: str | None = None
     embedding: list[float] | None = None
+    in_chroma: bool = False
 
 
 class VerifyResult(BaseModel):
@@ -64,6 +65,7 @@ class VerifyResult(BaseModel):
     checks: dict[str, CheckOutcome]  # keys: quality, completeness, recency, uniqueness
     quarantine_reason: str | None = None
     docs_to_archive: list[str] = Field(default_factory=list)
+    skipped: bool = False
 
 
 def parse_doc_version_from_filename(filename: str) -> str | None:
@@ -85,7 +87,13 @@ def parse_doc_version_from_filename(filename: str) -> str | None:
 
 
 def derive_doc_id(source: str, title: str | None = None) -> str:
-    """Derive a stable logical doc_id across versions of the same document."""
+    """Derive unique doc_id strictly from filename stem (never from extracted title)."""
+    stem = Path(source).stem
+    return stem or source
+
+
+def _doc_family(source: str, title: str | None = None) -> str:
+    """Normalized family slug across versions (used only for recency version matching)."""
     if title and title.strip():
         slug = re.sub(r"[^a-z0-9]+", "-", title.strip().lower()).strip("-")
         if slug:
@@ -135,6 +143,7 @@ def _compute_hash(doc: Document, full_text: str) -> str:
 def _matching_existing(
     doc_id: str, doc: Document, existing_docs: dict[str, DocumentMeta]
 ) -> list[tuple[str, DocumentMeta]]:
+    doc_family = _doc_family(doc.source, doc.title)
     matches: list[tuple[str, DocumentMeta]] = []
     for key, meta in existing_docs.items():
         if key in {doc_id, doc.source} or meta.doc_id == doc_id:
@@ -143,7 +152,7 @@ def _matching_existing(
         if doc.title and meta.title and doc.title.strip().lower() == meta.title.strip().lower():
             matches.append((key, meta))
             continue
-        if meta.source and derive_doc_id(meta.source, meta.title) == doc_id:
+        if meta.source and _doc_family(meta.source, meta.title) == doc_family:
             matches.append((key, meta))
     return matches
 
@@ -292,13 +301,26 @@ def _check_uniqueness(
     near_dup_threshold: float,
     embed_fn: Callable[[str], list[float]] | None,
     doc_embedding: list[float] | None,
-) -> CheckOutcome:
+) -> tuple[CheckOutcome, bool]:
     for key, meta in existing_docs.items():
         if meta.content_hash and meta.content_hash == doc_hash:
-            return CheckOutcome(
-                passed=False,
-                reason=f"exact duplicate of {meta.doc_id or key} (sha256={doc_hash[:12]})",
-                details={"duplicate_of": meta.doc_id or key, "sha256": doc_hash},
+            # Same doc_id + same content_hash already indexed in Chroma -> skip (0 chunks), do NOT quarantine.
+            if meta.in_chroma and (meta.doc_id == doc_id or key == doc_id):
+                return (
+                    CheckOutcome(
+                        passed=True,
+                        reason=f"already indexed in Chroma (doc_id={doc_id}, skipped)",
+                        details={"already_indexed": True, "sha256": doc_hash},
+                    ),
+                    True,
+                )
+            return (
+                CheckOutcome(
+                    passed=False,
+                    reason=f"exact duplicate of {meta.doc_id or key} (sha256={doc_hash[:12]})",
+                    details={"duplicate_of": meta.doc_id or key, "sha256": doc_hash},
+                ),
+                False,
             )
 
     has_embeddings = any(meta.embedding is not None for meta in existing_docs.values())
@@ -310,9 +332,10 @@ def _check_uniqueness(
             for key, meta in existing_docs.items():
                 if meta.embedding is None:
                     continue
-                # Skip older versions of the same logical doc_id so upgrades can proceed.
+                # Skip older versions of the same logical doc family so upgrades can proceed.
                 is_same_doc = (meta.doc_id == doc_id) or (
-                    meta.source is not None and derive_doc_id(meta.source, meta.title) == doc_id
+                    meta.source is not None
+                    and _doc_family(meta.source, meta.title) == _doc_family(doc.source, doc.title)
                 )
                 if (
                     is_same_doc
@@ -323,16 +346,22 @@ def _check_uniqueness(
                     continue
                 sim = _cosine_similarity(vec, meta.embedding)
                 if sim >= near_dup_threshold:
-                    return CheckOutcome(
-                        passed=False,
-                        reason=f"near-duplicate of {meta.doc_id or key} (cosine={sim:.4f})",
-                        details={"duplicate_of": meta.doc_id or key, "cosine": round(sim, 4)},
+                    return (
+                        CheckOutcome(
+                            passed=False,
+                            reason=f"near-duplicate of {meta.doc_id or key} (cosine={sim:.4f})",
+                            details={"duplicate_of": meta.doc_id or key, "cosine": round(sim, 4)},
+                        ),
+                        False,
                     )
 
-    return CheckOutcome(
-        passed=True,
-        reason="unique document (no exact or near duplicate)",
-        details={"sha256": doc_hash},
+    return (
+        CheckOutcome(
+            passed=True,
+            reason="unique document (no exact or near duplicate)",
+            details={"sha256": doc_hash},
+        ),
+        False,
     )
 
 
@@ -352,7 +381,7 @@ def verify_document(
     quality = _check_quality(doc, full_text, extraction_error)
     completeness = _check_completeness(doc, full_text)
     recency, docs_to_archive = _check_recency(doc, doc_id, existing_docs)
-    uniqueness = _check_uniqueness(
+    uniqueness, skipped = _check_uniqueness(
         doc=doc,
         doc_id=doc_id,
         doc_hash=doc_hash,
@@ -380,6 +409,7 @@ def verify_document(
         checks=checks,
         quarantine_reason=quarantine_reason,
         docs_to_archive=docs_to_archive,
+        skipped=skipped,
     )
 
 

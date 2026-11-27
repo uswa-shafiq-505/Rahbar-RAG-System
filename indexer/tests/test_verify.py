@@ -8,10 +8,16 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
 
-from pipeline.models import Document, Page
+import pytest
+
+from pipeline.config import IndexerSettings
+from pipeline.extract import _extract_metadata, extract
+from pipeline.models import Chunk, Document, Page
 from pipeline.verify import (
     DocumentMeta,
+    derive_doc_id,
     find_superseded_docs,
     run_verification_batch,
     verify_document,
@@ -240,4 +246,159 @@ def test_run_verification_batch_moves_failures_and_writes_report(tmp_path: Path)
     assert len(quarantined_files) == 1
     assert quarantined_files[0].name == "03_empty_2026.txt"
     assert not (in_dir / "03_empty_2026.txt").exists()
+
+
+def test_doc_id_derived_from_filename_not_title(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import pipeline.extract as extract_mod
+
+    class FakePage:
+        def extract_text(self) -> str:
+            return "2026\n\n" + CLEAN_TEXT
+
+    class FakePdfReader:
+        def __init__(self, _path: str) -> None:
+            self.pages = [FakePage()]
+
+    monkeypatch.setattr(extract_mod, "PdfReader", FakePdfReader)
+
+    pdf_like = tmp_path / "handbook-2026.pdf"
+    pdf_like.write_bytes(b"%PDF-1.4 fake")
+    meta = _extract_metadata(pdf_like)
+    assert meta["title"] == "2026"
+    assert meta["doc_id"] == "handbook-2026"
+    assert derive_doc_id("handbook-2026.pdf", title="2026") == "handbook-2026"
+
+    doc = _make_doc(source="handbook-2026.pdf", title="2026", doc_version="2026-06")
+    res = verify_document(doc, existing_docs={})
+    assert res.doc_id == "handbook-2026"
+
+
+def test_handbook_not_duplicate_of_itself() -> None:
+    doc = _make_doc(
+        source="handbook-2026.pdf",
+        title="2026",
+        doc_version="2026-06",
+    )
+    res = verify_document(doc, existing_docs={})
+    assert res.passed is True
+    assert res.quarantine_reason is None
+    assert res.checks["uniqueness"].passed is True
+    assert "duplicate_of" not in res.checks["uniqueness"].details
+
+
+def test_existing_meta_not_populated_with_current_doc(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import pipeline.run as run_mod
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    for name in ("doc1_2026-06.txt", "doc2_2026-06.txt", "doc3_2026-06.txt"):
+        (corpus / name).write_text(f"{name}\n\n{CLEAN_TEXT} unique={name}", encoding="utf-8")
+
+    snapshots: list[tuple[str, set[str]]] = []
+    orig_verify = run_mod.verify_document
+
+    def spy_verify(
+        doc: Document, existing_docs: dict[str, DocumentMeta], *args: Any, **kwargs: Any
+    ) -> Any:
+        snapshots.append((doc.source, set(existing_docs.keys())))
+        return orig_verify(doc, existing_docs, *args, **kwargs)
+
+    monkeypatch.setattr(run_mod, "verify_document", spy_verify)
+
+    cfg = IndexerSettings(
+        embed_model="nomic-embed-text",
+        chroma_host="chroma",
+        chroma_port=8000,
+        collection="rahbar",
+        corpus_dir=str(corpus),
+        chunk_size=400,
+        chunk_overlap=50,
+        ollama_url="http://localhost:11434",
+        verify_enabled=True,
+        verify_near_dup_threshold=0.95,
+        quarantine_dir=str(tmp_path / "quarantine"),
+        lake_dir=str(tmp_path / "lake"),
+        verify_report_path=str(tmp_path / "results"),
+    )
+
+    class EmptyChroma:
+        def get_collection(self, name: str) -> Any:
+            raise ValueError(name)
+
+    run_mod.run_pipeline(
+        cfg,
+        chroma_client=EmptyChroma(),
+        extract_fn=extract,
+        embed_fn=lambda items, _s: [[1.0, 0.0, 0.0] for _ in items],
+        store_fn=lambda chunks, _v, _s: len(chunks),
+    )
+
+    assert len(snapshots) == 3
+    assert snapshots[0] == ("doc1_2026-06.txt", set())
+    assert snapshots[1] == ("doc2_2026-06.txt", {"doc1_2026-06"})
+    assert snapshots[2] == ("doc3_2026-06.txt", {"doc1_2026-06", "doc2_2026-06"})
+
+
+def test_a2_second_run_zero_chunks(tmp_path: Path) -> None:
+    import pipeline.run as run_mod
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    q_dir = tmp_path / "quarantine"
+    metadatas: list[dict[str, Any]] = []
+
+    for i in range(1, 4):
+        fname = f"policy_{i}_2026-06.txt"
+        fpath = corpus / fname
+        fpath.write_text(f"Title {i}\n\n{CLEAN_TEXT} policy={i}", encoding="utf-8")
+        metadatas.append(
+            {
+                "source": fname,
+                "title": f"Title {i}",
+                "doc_version": "2026-06",
+                "content_hash": hashlib.sha256(fpath.read_bytes()).hexdigest(),
+            }
+        )
+
+    class PopulatedCollection:
+        def get(self, include: list[str] | None = None) -> dict[str, Any]:
+            return {"metadatas": list(metadatas)}
+
+    class PopulatedChroma:
+        def get_collection(self, name: str) -> PopulatedCollection:
+            return PopulatedCollection()
+
+    stored: list[Chunk] = []
+    cfg = IndexerSettings(
+        embed_model="nomic-embed-text",
+        chroma_host="chroma",
+        chroma_port=8000,
+        collection="rahbar",
+        corpus_dir=str(corpus),
+        chunk_size=400,
+        chunk_overlap=50,
+        ollama_url="http://localhost:11434",
+        verify_enabled=True,
+        verify_near_dup_threshold=0.95,
+        quarantine_dir=str(q_dir),
+        lake_dir=str(tmp_path / "lake"),
+        verify_report_path=str(tmp_path / "results"),
+    )
+
+    count = run_mod.run_pipeline(
+        cfg,
+        chroma_client=PopulatedChroma(),
+        extract_fn=extract,
+        embed_fn=lambda items, _s: [[1.0, 0.0, 0.0] for _ in items],
+        store_fn=lambda chunks, _v, _s: stored.extend(chunks) or len(chunks),
+    )
+
+    assert count == 0
+    assert stored == []
+    assert list(q_dir.iterdir()) == []
+    assert len(list(corpus.iterdir())) == 3
 

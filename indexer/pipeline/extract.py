@@ -156,6 +156,7 @@ def _extract_metadata(path: Path) -> dict[str, Any]:
 
     title = _first_title_line(first_text, path.stem)
     return {
+        "doc_id": path.stem,
         "content_hash": content_hash,
         "title": title,
         "doc_version": doc_version,

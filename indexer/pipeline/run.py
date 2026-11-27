@@ -54,7 +54,7 @@ def _doc_meta(doc: Document, doc_id: str | None = None) -> DocumentMeta:
 
 
 def load_existing_meta(chroma_client: Any, collection_name: str) -> dict[str, DocumentMeta]:
-    """Load previously indexed document metadata from Chroma; return {} if empty/absent."""
+    """Load previously indexed document metadata ONLY from Chroma; return {} if empty/absent."""
     if chroma_client is None:
         return {}
     try:
@@ -72,7 +72,7 @@ def load_existing_meta(chroma_client: Any, collection_name: str) -> dict[str, Do
             continue
         source = str(meta.get("source") or "")
         title = str(meta["title"]) if meta.get("title") is not None else None
-        doc_id = derive_doc_id(source, title) if source or title else ""
+        doc_id = derive_doc_id(source) if source else ""
         if not doc_id:
             continue
         content_hash = str(meta.get("content_hash") or "")
@@ -83,6 +83,7 @@ def load_existing_meta(chroma_client: Any, collection_name: str) -> dict[str, Do
             doc_version=doc_version,
             title=title,
             source=source or None,
+            in_chroma=True,
         )
     return existing
 
@@ -177,15 +178,19 @@ def run_pipeline(
     report_path = Path(settings.verify_report_path) / f"verify-{_utc_now_iso()}.jsonl"
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
-    passed, quarantined, chunks_stored = 0, 0, 0
+    passed, skipped, quarantined, chunks_stored = 0, 0, 0, 0
     for path, doc_version, superseded in documents:
         doc = active_extract(str(path), doc_version, superseded)
         vr = verify_document(doc, existing_meta, settings.verify_near_dup_threshold)
         _append_jsonl(report_path, vr.model_dump())
         if not vr.passed:
+            # Legit prior-quarantine / failed-doc handling: move to quarantine and skip indexing.
             if path.exists():
                 shutil.move(str(path), str(Path(settings.quarantine_dir) / path.name))
             quarantined += 1
+            continue
+        if vr.skipped:
+            skipped += 1
             continue
 
         cleaned = clean(doc)
@@ -205,6 +210,7 @@ def run_pipeline(
             stored = active_store(pieces, vectors, settings)
             chunks_stored += stored
 
+        # Record in existing_meta ONLY after verification and chunk/embed/store succeed.
         passed += 1
         existing_meta[vr.doc_id] = _doc_meta(doc, vr.doc_id)
 
@@ -212,6 +218,7 @@ def run_pipeline(
         "verify_summary",
         total=len(documents),
         passed=passed,
+        skipped=skipped,
         quarantined=quarantined,
         chunks_stored=chunks_stored,
         report=str(report_path),
