@@ -1,0 +1,44 @@
+# A tiny pod that only holds the ragops-data volume open, so files can be copied in and out:
+#   scripts/load-docs.sh <folder>   copies documents into /data/lake/incoming
+#   scripts/pull-results.sh         copies results/ and traces/ out to the repository
+# It also creates the folder layout. Delete it when you are done: kubectl delete -f k8s/loader-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: data-loader
+  namespace: rahbar
+  labels: {app: loader, app.kubernetes.io/part-of: rahbar}
+spec:
+  serviceAccountName: eval-sa
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile: {type: RuntimeDefault}
+  containers:
+    - name: loader
+      image: busybox:1.36
+      imagePullPolicy: IfNotPresent
+      command: ["sh", "-c"]
+      args:
+        - mkdir -p /data/lake/incoming /data/quarantine /data/archive /data/state /data/traces /data/results && sleep 86400
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      volumeMounts:
+        - {name: data, mountPath: /data}
+  volumes:
+    - name: data
+      persistentVolumeClaim: {claimName: ragops-data}

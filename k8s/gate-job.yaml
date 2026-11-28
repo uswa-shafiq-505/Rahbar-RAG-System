@@ -1,0 +1,57 @@
+# Only the gate, on the newest result file (Assignment 03, F2). It reads the thresholds from the
+# gate-thresholds ConfigMap, so this is the Job to run after editing a threshold:
+#   kubectl edit configmap gate-thresholds -n rahbar      (or kubectl patch)
+#   scripts/run-job.sh k8s/gate-job.yaml gate-check       (outcome changes, no image rebuilt)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gate-check
+  namespace: rahbar
+  labels: {app: eval, app.kubernetes.io/part-of: rahbar}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels: {app: eval, app.kubernetes.io/part-of: rahbar}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: eval-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: gate
+          image: rahbar-eval:dev
+          imagePullPolicy: IfNotPresent
+          command: ["python", "scripts/gate.py", "--results", "/data/results",
+                    "--baseline", "/data/results/baseline.json", "--config", "/config/gate.yaml",
+                    "--allow-missing-baseline"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 192Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: data, mountPath: /data}
+            - {name: gate, mountPath: /config, readOnly: true}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 16Mi}
+        - name: data
+          persistentVolumeClaim: {claimName: ragops-data}
+        - name: gate
+          configMap: {name: gate-thresholds}

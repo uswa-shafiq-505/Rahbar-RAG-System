@@ -102,7 +102,29 @@ report, engineering notes, failure analysis, AI usage. See `docs/ARCHITECTURE.md
 > **CI note:** The `e2e-eval` job runs the indexer with `--dummy` and the stub retriever/LLM provider to validate the Kubernetes Job, StatefulSet, PVC, probes, and Ingress without requiring Ollama; real-embedding evaluation numbers come from the local run recorded in `eval/results.json`.
 
 ## Authors
-Uswa Shafiq (Platform)
-Ermish (RAG)
+Uswa Shafiq (Platform/Ops)
+Ermish (RAG/Verification/Ingestion)
 
- 
+## A3 Platform and Ops Commands
+
+**Data Volume & PVC**
+- `make load-docs DIR=eval/fixtures`
+- `make pull-results`
+
+**Ingestion Jobs**
+- `kubectl create job --from=cronjob/reindex ingest-batch-b -n rahbar`
+
+**Evaluation Gate**
+- `make eval-baseline`
+- `make gate-check`
+
+**Controlled Release**
+- `make candidate-ingest COLLECTION=rahbar_bad CHUNK_SIZE=40 CHUNK_OVERLAP=0`
+- `make candidate-up COLLECTION=rahbar_bad`
+- `make eval-candidate COLLECTION=rahbar_bad`
+- `make release COLLECTION=rahbar_good`
+- `make rollback`
+
+**Observability**
+- `python3 scripts/trace.py <trace_id> --stdin`
+- `python3 scripts/trace_report.py --dir traces --since 24h` 

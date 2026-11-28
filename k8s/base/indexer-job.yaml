@@ -22,6 +22,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile: {type: RuntimeDefault}
       initContainers:
         - name: wait-for-chroma
@@ -62,6 +63,11 @@ spec:
           args: ["python", "-m", "pipeline.run"]
           envFrom:
             - configMapRef: {name: rahbar-config}
+          env:
+            - name: OLLAMA_HOST
+              value: "http://ollama:11434"
+            - name: OLLAMA_URL
+              value: "http://ollama:11434"
           # Embedding a 40-page PDF (and OCR) holds far more memory than answering a query.
           # Exit code 137 = OOMKilled: raise the limit, guided by `kubectl top pods`.
           resources:
@@ -79,6 +85,9 @@ spec:
                 - ALL
           volumeMounts:
             - {name: tmp, mountPath: /tmp}     # OCR page images and pdf2image temp files
+            - {name: data, mountPath: /data}     # data lake, quarantine, archive, state, reports
       volumes:
         - name: tmp
           emptyDir: {sizeLimit: 1Gi}
+        - name: data
+          persistentVolumeClaim: {claimName: ragops-data}

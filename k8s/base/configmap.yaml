@@ -15,7 +15,8 @@ data:
   RETRIEVER: "chroma"            # stub | chroma
   LLM_PROVIDER: "ollama-host"    # stub | ollama-host | ollama-incluster | hosted
   LLM_MODEL: "llama3.2:3b"
-  OLLAMA_URL: "http://host.minikube.internal:11434"
+  OLLAMA_URL: "http://ollama:11434"
+  OLLAMA_HOST: "http://ollama:11434"
   # --- vector store and cache -------------------------------------------------------------
   CHROMA_HOST: "chroma"
   CHROMA_PORT: "8000"
@@ -38,4 +39,7 @@ data:
   CHUNK_SIZE: "400"
   CHUNK_OVERLAP: "50"
   CORPUS_DIR: "/corpus"
+  # --- RAGOps (Assignment 03): the shared volume ---
+  DATA_DIR: "/data"              # lake/, quarantine/, archive/, state/, results/
+  TRACE_DIR: "/data/traces"      # one traces-<pod>.jsonl per api pod
   LOG_LEVEL: "INFO"
